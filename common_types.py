@@ -5,6 +5,8 @@ import sys
 from eth_typing import ChecksumAddress, HexStr
 from web3.types import Wei
 
+from utils import ts_now
+
 # Setup logging here, so that it's available in tests
 logging.basicConfig(
     level=logging.INFO,
@@ -43,6 +45,22 @@ class Subscription(NamedTuple):
     terminated: bool
     initiator: ChecksumAddress
 
+    @property
+    def status(self) -> str:
+        if self.terminated:
+            return 'terminated'
+        
+        current_timestamp = ts_now()
+        next_payment_ts = self.start_ts + self.period * self.payments_made
+        if current_timestamp > next_payment_ts + self.payment_period:
+            return 'expired'
+        
+        if current_timestamp > next_payment_ts:
+            return 'pending'
+        
+        return 'active'
+        
+
     def to_json(self) -> dict[str, Any]:
         return {
             'subscription_hash': self.subscription_hash,
@@ -63,6 +81,7 @@ class Subscription(NamedTuple):
             'payments_made': self.payments_made,
             'terminated': self.terminated,
             'initiator': self.initiator,
+            'status': self.status,
         }
 
     def to_db(self) -> tuple:
