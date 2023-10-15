@@ -102,6 +102,20 @@ async def get_subscriptions_by_merchant(address: str):
     return [sub.to_json() for sub in subs]
 
 
+@app.get("/subscriptions/merchant/{address}/id/{subscription_id}")
+async def get_subscriptions_by_merchant_and_id(address: str, subsciption_id: str):
+    try:
+        validated_address = to_checksum_address(address)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
+
+    subs = db.get_subscriptions_by_merchant_and_id(
+        address=validated_address,
+        subscription_id=subsciption_id,
+    )
+    return [sub.to_json() for sub in subs]
+
+
 @app.get("/subscription/{subscription_hash}")
 async def get_subscription_by_hash(subscription_hash: str):
     sub = db.get_subscription_by_hash(subscription_hash)
