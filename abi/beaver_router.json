@@ -53,6 +53,12 @@
       {
         "indexed": false,
         "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
         "name": "merchantDomain",
         "type": "bytes32"
       },
@@ -60,12 +66,6 @@
         "indexed": false,
         "internalType": "bytes32",
         "name": "product",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "nonce",
         "type": "bytes32"
       },
       {
@@ -221,17 +221,17 @@
       },
       {
         "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
         "name": "merchantDomain",
         "type": "bytes32"
       },
       {
         "internalType": "bytes32",
         "name": "product",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "nonce",
         "type": "bytes32"
       },
       {
@@ -298,17 +298,17 @@
       },
       {
         "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
         "name": "merchantDomain",
         "type": "bytes32"
       },
       {
         "internalType": "bytes32",
         "name": "product",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "nonce",
         "type": "bytes32"
       },
       {
