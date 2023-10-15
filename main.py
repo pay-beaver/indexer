@@ -69,6 +69,11 @@ async def loop():
         await asyncio.sleep(12)  # Almost no delay in the loop since we want to be checking subscriptions continuously
 
 
+@app.get('/healthcheck')
+async def healthcheck():
+    return 'OK'
+
+
 @app.get('/subscriptions/all')
 async def get_all_subscriptions():
     subs =  db.get_all_subscriptions()
