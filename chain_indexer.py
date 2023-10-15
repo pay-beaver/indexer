@@ -59,10 +59,6 @@ class ChainIndexer:
                 )
                 for log in new_logs:
                     logging.info(f"Found new subscription log for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
-                    if self.db.get_subscription_by_hash(log.log.args.subscriptionHash.hex()) is not None:
-                        log.warning(f"Did not add subscription from log {log} on chain {self.chain.name} and router {self.router.address} at block {log.blockNumber} because a susbcription with the same hash is already being tracked.")
-                        continue
-
                     token_contract = self.web3.eth.contract(address=log.args.token, abi=ERC20_ABI)
                     decimals = await token_contract.functions.decimals().call()
                     symbol = await token_contract.functions.symbol().call()
