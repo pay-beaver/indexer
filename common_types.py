@@ -10,13 +10,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(pathname)s %(levelname)s %(message)s',
     handlers=[
-        logging.FileHandler("beaver-watcher.log"),
+        logging.FileHandler("beaver-indexer.log"),
         logging.StreamHandler(sys.stdout),
     ],
     force=True,
 )
 logging.getLogger('httpx').setLevel(logging.WARNING)
-logging.info('Starting beaver watcher')
+logging.info('Starting beaver indexer')
 
 class Chain(Enum):
     SEPOLIA = 11155111

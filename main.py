@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import asyncio
 from eth_typing import ChecksumAddress
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from web3 import Web3

@@ -68,7 +68,7 @@ class ChainIndexer:
                         chain=self.chain,
                         user_address=log.args.user,
                         merchant_address=log.args.merchant,
-                        subscription_id=log.args.subscriptionId.hex(),
+                        subscription_id=log.args.subscriptionId,
                         merchant_domain=log.args.merchantDomain,
                         product=log.args.product,
                         token_address=log.args.token,

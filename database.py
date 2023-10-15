@@ -103,6 +103,7 @@ class Database:
 
     def add_subscription(self, subscription: Subscription) -> None:
         with self.context() as cursor:
+            print('sub', subscription.to_db())
             cursor.execute(
                 '''INSERT INTO subscription(
                     hash,
