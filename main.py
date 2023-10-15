@@ -76,7 +76,7 @@ async def healthcheck():
 
 @app.get('/subscriptions/all')
 async def get_all_subscriptions():
-    subs =  db.get_all_subscriptions()
+    subs = db.get_all_subscriptions()
     return [sub.to_json() for sub in subs]
 
 
