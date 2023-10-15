@@ -28,9 +28,9 @@ class Subscription(NamedTuple):
     chain: Chain
     user_address: ChecksumAddress
     merchant_address: ChecksumAddress
+    subscription_id: str
     merchant_domain: str
     product: str
-    nonce: HexStr
     token_address: ChecksumAddress
     token_symbol: str
     token_decimals: int
@@ -49,9 +49,9 @@ class Subscription(NamedTuple):
             'chain': self.chain.name.lower(),
             'user_address': self.user_address,
             'merchant_address': self.merchant_address,
+            'subscription_id': self.subscription_id,
             'merchant_domain': self.merchant_domain,
             'product': self.product,
-            'nonce': self.nonce,
             'token_address': self.token_address,
             'token_symbol': self.token_symbol,
             'token_decimals': self.token_decimals,
@@ -71,9 +71,9 @@ class Subscription(NamedTuple):
             self.chain.name.lower(),
             self.user_address,
             self.merchant_address,
+            self.subscription_id,
             self.merchant_domain,
             self.product,
-            self.nonce,
             self.token_address,
             self.token_symbol,
             self.token_decimals,
@@ -94,9 +94,9 @@ class Subscription(NamedTuple):
             chain=Chain[row[1].upper()],
             user_address=row[2],
             merchant_address=row[3],
-            merchant_domain=row[4],
-            product=row[5],
-            nonce=row[6],
+            subscription_id=row[4],
+            merchant_domain=row[5],
+            product=row[6],
             token_address=row[7],
             token_symbol=row[8],
             token_decimals=row[9],
