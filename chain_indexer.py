@@ -16,6 +16,8 @@ from price_oracle import get_token_to_eth_price
 from utils import ts_now
 
 MAX_LOGS_BLOCK_RANGE = 100
+
+FIRST_PAYMENT_GAS = 110000
 GAS_PER_PAYMENT = 92000
 
 
@@ -143,12 +145,12 @@ class ChainIndexer:
             # If we got an HTTP error - it's okay, we will check again later
             logging.warning(f"Haven't checked all new termination logs for chain {self.chain.name} and router {self.router.address} because of an HTTP error: {traceback.format_exc()}")
     
-    async def calculate_compensation_amount_human(self, token_address: ChecksumAddress) -> tuple[Wei, float]:
+    async def calculate_compensation_amount_human(self, token_address: ChecksumAddress, gas: int) -> tuple[Wei, float]:
         token_to_eth_price = get_token_to_eth_price(chain=self.chain, token_address=token_address)
         base_fee_wei = await self.web3.eth.gas_price
         # multiplying by 1.2 to get some reserve against base fee fluctionations
         max_fee_wei = (base_fee_wei * 1.2) + self.priority_fee_wei
-        eth_fee = GAS_PER_PAYMENT * max_fee_wei / 1e18
+        eth_fee = gas * max_fee_wei / 1e18
         token_fee = eth_fee * token_to_eth_price
         return Wei(int(max_fee_wei)), token_fee
 
@@ -193,8 +195,13 @@ class ChainIndexer:
                 ))
                 continue
             
+            if payment_number == 1:
+                gas = FIRST_PAYMENT_GAS
+            else:
+                gas = GAS_PER_PAYMENT
             max_fee_wei, compensation_amount = await self.calculate_compensation_amount_human(
-                subscription.token_address,
+                token_address=subscription.token_address,
+                gas=gas,
             )
             try:
                 nonce = await self.web3.eth.get_transaction_count(self.account.address)
@@ -206,7 +213,7 @@ class ChainIndexer:
                     'nonce': nonce,
                     'maxPriorityFeePerGas': self.priority_fee_wei,
                     'maxFeePerGas': max_fee_wei,
-                    'gas': GAS_PER_PAYMENT,
+                    'gas': gas,
                 })
                 print('tx_data', tx_data)
                 signed_txn = self.account.sign_transaction(tx_data)
