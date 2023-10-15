@@ -81,13 +81,24 @@ async def get_all_subscriptions():
 
 
 @app.get("/subscriptions/user/{address}")
-async def get_subscriptions_by_address(address: str):
+async def get_subscriptions_by_user(address: str):
     try:
         validated_address = to_checksum_address(address)
     except Exception:
         raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
 
-    subs = db.get_subscriptions_by_address(validated_address)
+    subs = db.get_subscriptions_by_user(validated_address)
+    return [sub.to_json() for sub in subs]
+
+
+@app.get("/subscriptions/merchant/{address}")
+async def get_subscriptions_by_merchant(address: str):
+    try:
+        validated_address = to_checksum_address(address)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
+
+    subs = db.get_subscriptions_by_merchant(validated_address)
     return [sub.to_json() for sub in subs]
 
 

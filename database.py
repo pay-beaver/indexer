@@ -140,9 +140,14 @@ class Database:
             cursor.execute('SELECT * FROM subscription')
             return [Subscription.from_db(row) for row in cursor.fetchall()]
 
-    def get_subscriptions_by_address(self, address: ChecksumAddress) -> list[Subscription]:
+    def get_subscriptions_by_user(self, address: ChecksumAddress) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE user_address = %s', (address,))
+            return [Subscription.from_db(row) for row in cursor.fetchall()]
+    
+    def get_subscriptions_by_merchant(self, address: ChecksumAddress) -> list[Subscription]:
+        with self.context() as cursor:
+            cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s', (address,))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
     def get_subscription_by_hash(self, subscription_hash: str) -> Subscription | None:
