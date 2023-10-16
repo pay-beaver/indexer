@@ -64,6 +64,13 @@ class Subscription(NamedTuple):
     def is_active(self) -> bool:
         status = self.status
         return status == 'paid' or status == 'pending'
+    
+    @property
+    def next_payment_at(self) -> int:
+        if not self.is_active:
+            return 0
+        
+        return self.start_ts + self.period * self.payments_made
         
     def to_json(self) -> dict[str, Any]:
         return {
@@ -87,6 +94,7 @@ class Subscription(NamedTuple):
             'initiator': self.initiator,
             'status': self.status,
             'is_active': self.is_active,
+            'next_payment_at': self.next_payment_at,
         }
 
     def to_db(self) -> tuple:
