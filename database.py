@@ -150,6 +150,11 @@ class Database:
             cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s', (address,))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
+    def get_subscriptions_by_merchant_and_user(self, merchant_address: ChecksumAddress, userid: str) -> list[Subscription]:
+        with self.context() as cursor:
+            cursor.execute("SELECT * FROM subscription WHERE merchant_address = %s AND userid LIKE '%s%'", (merchant_address, userid))
+            return [Subscription.from_db(row) for row in cursor.fetchall()]
+    
     def get_subscription_by_merchant_and_id(self, address: ChecksumAddress, subscription_id: str) -> Subscription | None:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s AND subscription_id=%s ORDER BY start_ts LIMIT 1', (address, subscription_id))
