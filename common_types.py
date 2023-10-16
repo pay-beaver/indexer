@@ -58,9 +58,13 @@ class Subscription(NamedTuple):
         if current_timestamp > next_payment_ts:
             return 'pending'
         
-        return 'active'
+        return 'paid'
+    
+    @property
+    def is_active(self) -> bool:
+        status = self.status
+        return status == 'paid' or status == 'pending'
         
-
     def to_json(self) -> dict[str, Any]:
         return {
             'subscription_hash': self.subscription_hash,
@@ -82,6 +86,7 @@ class Subscription(NamedTuple):
             'terminated': self.terminated,
             'initiator': self.initiator,
             'status': self.status,
+            'is_active': self.is_active,
         }
 
     def to_db(self) -> tuple:
