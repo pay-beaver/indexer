@@ -70,7 +70,7 @@ class ChainIndexer:
                         chain=self.chain,
                         user_address=log.args.user,
                         merchant_address=log.args.merchant,
-                        subscription_id=log.args.subscriptionId,
+                        subscription_id=log.args.subscriptionId.strip(b'\x00').decode(encoding='ascii', errors='replace'),
                         merchant_domain=log.args.merchantDomain.strip(b'\x00').decode(encoding='ascii', errors='replace'),
                         product=log.args.product.strip(b'\x00').decode(encoding='ascii', errors='replace'),
                         token_address=log.args.token,
