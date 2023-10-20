@@ -151,7 +151,6 @@ async def does_user_have_an_active_subscription(address: str, userid: str):
     except Exception:
         raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
 
-
     subs = db.get_subscriptions_by_merchant_and_user(merchant_address=validated_address, userid=userid)
     return any([s.is_active for s in subs])
 
