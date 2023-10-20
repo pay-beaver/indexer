@@ -152,7 +152,7 @@ class Database:
     
     def get_subscriptions_by_merchant_and_user(self, merchant_address: ChecksumAddress, userid: str) -> list[Subscription]:
         with self.context() as cursor:
-            cursor.execute("SELECT * FROM subscription WHERE merchant_address = %s AND starts_with(subscription_id, %s)", (merchant_address, userid))
+            cursor.execute("SELECT * FROM subscription WHERE merchant_address = %s AND user_id = %s", (merchant_address, userid))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
     def get_subscription_by_merchant_and_id(self, address: ChecksumAddress, subscription_id: str) -> Subscription | None:

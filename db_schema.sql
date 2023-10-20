@@ -8,9 +8,10 @@ CREATE TABLE subscription(
   chain TEXT NOT NULL,
   user_address TEXT NOT NULL,
   merchant_address TEXT NOT NULL,
-  subscription_id TEXT NOT NULL,
-  merchant_domain TEXT NOT NULL,
-  product TEXT NOT NULL,
+  subscription_id TEXT, -- nullable
+  user_id TEXT, -- nullable
+  merchant_domain TEXT, -- nullable
+  product TEXT, -- nullable
   token_address TEXT NOT NULL,
   token_symbol TEXT NOT NULL,
   token_decimals BIGINT NOT NULL,

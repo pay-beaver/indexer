@@ -65,14 +65,21 @@ class ChainIndexer:
                     decimals = await token_contract.functions.decimals().call()
                     symbol = await token_contract.functions.symbol().call()
 
+                    try:
+                        metadata: dict = json.loads(log.args.metadata)
+                    except Exception:
+                        logging.error(f"Could not load json metadata for new subscription log {log} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
+                        continue
+
                     subscription = Subscription(
                         subscription_hash=log.args.subscriptionHash.hex(),
                         chain=self.chain,
                         user_address=log.args.user,
                         merchant_address=log.args.merchant,
-                        subscription_id=log.args.subscriptionId.strip(b'\x00').decode(encoding='ascii', errors='replace'),
-                        merchant_domain=log.args.merchantDomain.strip(b'\x00').decode(encoding='ascii', errors='replace'),
-                        product=log.args.product.strip(b'\x00').decode(encoding='ascii', errors='replace'),
+                        subscription_id=metadata.get('subscription_id'),
+                        user_id=metadata.get('user_id'),
+                        merchant_domain=metadata.get('merchant_domain'),
+                        product=metadata.get('product'),
                         token_address=log.args.token,
                         token_symbol=symbol,
                         token_decimals=decimals,

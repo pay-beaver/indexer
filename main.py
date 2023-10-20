@@ -144,6 +144,18 @@ async def get_subscription_logs(subscription_hash: str):
     return [log.to_json() for log in logs]
 
 
+@app.get("/is_active/merchant/{merchant_address}/userid/{userid}")
+async def does_user_have_an_active_subscription(merhcant_address: str, userid: str):
+    try:
+        validated_address = to_checksum_address(merhcant_address)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f'{merhcant_address} is not a valid address')
+
+
+    subs = db.get_subscriptions_by_merchant_and_user(merchant_address=validated_address, userid=userid)
+    return any([s.is_active for s in subs])
+
+
 class HashSubscriptionData(BaseModel):
     merchant_address: str
     userid: str

@@ -30,9 +30,10 @@ class Subscription(NamedTuple):
     chain: Chain
     user_address: ChecksumAddress
     merchant_address: ChecksumAddress
-    subscription_id: str
-    merchant_domain: str
-    product: str
+    subscription_id: str | None
+    user_id: str | None
+    merchant_domain: str | None
+    product: str | None
     token_address: ChecksumAddress
     token_symbol: str
     token_decimals: int
@@ -127,19 +128,20 @@ class Subscription(NamedTuple):
             user_address=row[2],
             merchant_address=row[3],
             subscription_id=row[4],
-            merchant_domain=row[5],
-            product=row[6],
-            token_address=row[7],
-            token_symbol=row[8],
-            token_decimals=row[9],
-            uint_amount=row[10],
-            human_amount=row[11],
-            period=row[12],
-            start_ts=row[13],
-            payment_period=row[14],
-            payments_made=row[15],
-            terminated=row[16],
-            initiator=row[17],
+            user_id=row[5],
+            merchant_domain=row[6],
+            product=row[7],
+            token_address=row[8],
+            token_symbol=row[9],
+            token_decimals=row[10],
+            uint_amount=row[11],
+            human_amount=row[12],
+            period=row[13],
+            start_ts=row[14],
+            payment_period=row[15],
+            payments_made=row[16],
+            terminated=row[17],
+            initiator=row[18],
         )
 
 
