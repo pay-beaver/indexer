@@ -110,6 +110,7 @@ class Database:
                     user_address,
                     merchant_address,
                     subscription_id,
+                    user_id,
                     merchant_domain,
                     product,
                     token_address,
@@ -123,7 +124,7 @@ class Database:
                     payments_made,
                     terminated,
                     initiator
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
                 subscription.to_db(),
             )
 

@@ -105,6 +105,7 @@ class Subscription(NamedTuple):
             self.user_address,
             self.merchant_address,
             self.subscription_id,
+            self.user_id,
             self.merchant_domain,
             self.product,
             self.token_address,
