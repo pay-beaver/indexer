@@ -45,6 +45,10 @@ class Subscription(NamedTuple):
     payments_made: int
     terminated: bool
     initiator: ChecksumAddress
+        
+    @property
+    def next_payment_at(self) -> int:
+        return self.start_ts + self.period * self.payments_made
 
     @property
     def status(self) -> str:
@@ -52,7 +56,7 @@ class Subscription(NamedTuple):
             return 'terminated'
         
         current_timestamp = ts_now()
-        next_payment_ts = self.start_ts + self.period * self.payments_made
+        next_payment_ts = self.next_payment_at
         if current_timestamp > next_payment_ts + self.payment_period:
             return 'expired'
         
@@ -63,15 +67,15 @@ class Subscription(NamedTuple):
     
     @property
     def is_active(self) -> bool:
-        status = self.status
-        return status == 'paid' or status == 'pending'
-    
-    @property
-    def next_payment_at(self) -> int:
-        if not self.is_active:
-            return 0
-        
-        return self.start_ts + self.period * self.payments_made
+        # If subscription was terminated, but the billing cycle has not passed yet,
+        # we consider it active.
+        current_timestamp = ts_now()
+        next_payment_ts = self.next_payment_at
+
+        if current_timestamp > next_payment_ts + self.payment_period:
+            return False
+
+        return True
         
     def to_json(self) -> dict[str, Any]:
         return {
