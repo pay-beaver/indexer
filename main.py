@@ -3,7 +3,6 @@ import os
 import traceback
 from dotenv import load_dotenv
 import asyncio
-from eth_typing import ChecksumAddress
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +28,17 @@ db = Database(
     port=int(os.environ['DB_PORT']),
 )
 
-app = FastAPI()
+app = FastAPI(
+    title='Beaver Crypto Subscriptions',
+    summary='A simple service to accept crypto payments for subscriptions.',
+    description='So cool!',
+    version='0.1.0',
+    contact={
+        'name': 'Alexey Nebolsin',
+        'email': 'alexey@nebols.in',
+        'X/Twitter': '@nebolax',
+    }
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -112,13 +121,13 @@ async def get_subscriptions_by_merchant_and_userid(address: str, userid: str):
     return [sub.to_json() for sub in subs]
 
 @app.get("/subscription/merchant/{address}/id/{subscription_id}")
-async def get_subscription_by_merchant_and_id(address: str, subsciption_id: str):
+async def get_subscription_by_merchant_and_subscriptionid(address: str, subsciption_id: str):
     try:
         validated_address = to_checksum_address(address)
     except Exception:
         raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
 
-    sub = db.get_subscription_by_merchant_and_id(
+    sub = db.get_subscription_by_merchant_and_subscriptionid(
         address=validated_address,
         subscription_id=subsciption_id,
     )

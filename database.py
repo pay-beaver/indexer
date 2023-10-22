@@ -156,7 +156,7 @@ class Database:
             cursor.execute("SELECT * FROM subscription WHERE merchant_address = %s AND user_id = %s", (merchant_address, userid))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
-    def get_subscription_by_merchant_and_id(self, address: ChecksumAddress, subscription_id: str) -> Subscription | None:
+    def get_subscription_by_merchant_and_subscriptionid(self, address: ChecksumAddress, subscription_id: str) -> Subscription | None:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s AND subscription_id=%s ORDER BY start_ts LIMIT 1', (address, subscription_id))
             result = cursor.fetchone()
