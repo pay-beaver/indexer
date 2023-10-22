@@ -146,19 +146,19 @@ class Database:
             cursor.execute('SELECT * FROM subscription WHERE user_address = %s', (address,))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
-    def get_subscriptions_by_merchant(self, address: ChecksumAddress) -> list[Subscription]:
+    def get_subscriptions_by_merchant(self, merchant_domain: str) -> list[Subscription]:
         with self.context() as cursor:
-            cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s', (address,))
+            cursor.execute('SELECT * FROM subscription WHERE merchant_domain = %s', (merchant_domain,))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
-    def get_subscriptions_by_merchant_and_user(self, merchant_address: ChecksumAddress, userid: str) -> list[Subscription]:
+    def get_subscriptions_by_merchant_and_user(self, merchant_domain: str, userid: str) -> list[Subscription]:
         with self.context() as cursor:
-            cursor.execute("SELECT * FROM subscription WHERE merchant_address = %s AND user_id = %s", (merchant_address, userid))
+            cursor.execute("SELECT * FROM subscription WHERE merchant_domain = %s AND user_id = %s", (merchant_domain, userid))
             return [Subscription.from_db(row) for row in cursor.fetchall()]
     
-    def get_subscription_by_merchant_and_subscriptionid(self, address: ChecksumAddress, subscription_id: str) -> Subscription | None:
+    def get_subscription_by_merchant_and_subscriptionid(self, merchant_domain: str, subscription_id: str) -> Subscription | None:
         with self.context() as cursor:
-            cursor.execute('SELECT * FROM subscription WHERE merchant_address = %s AND subscription_id=%s ORDER BY start_ts LIMIT 1', (address, subscription_id))
+            cursor.execute('SELECT * FROM subscription WHERE merchant_domain = %s AND subscription_id=%s ORDER BY start_ts LIMIT 1', (merchant_domain, subscription_id))
             result = cursor.fetchone()
             if result is None:
                 return None

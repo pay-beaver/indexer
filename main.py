@@ -6,14 +6,11 @@ import asyncio
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from web3 import Web3
 
 from chain_indexer import ChainIndexer
 from common_types import Chain
 from constants import ALL_CHAINS_CONFIGS
 from eth_utils.address import to_checksum_address
-from eth_abi.abi import encode
 
 
 from database import Database
@@ -28,11 +25,17 @@ db = Database(
     port=int(os.environ['DB_PORT']),
 )
 
+app_description = '''
+For merchant_domain use your domain. For example `paybeaver.xyz`.
+
+
+'''
+
 app = FastAPI(
     title='Beaver Crypto Subscriptions',
     summary='A simple service to accept crypto payments for subscriptions.',
-    description='So cool!',
-    version='0.1.0',
+    description=app_description,
+    version='0.1',
     contact={
         'name': 'Alexey Nebolsin',
         'email': 'alexey@nebols.in',
@@ -100,35 +103,20 @@ async def get_subscriptions_by_user(address: str):
     return [sub.to_json() for sub in subs]
 
 
-@app.get("/subscriptions/merchant/{address}")
-async def get_subscriptions_by_merchant(address: str):
-    try:
-        validated_address = to_checksum_address(address)
-    except Exception:
-        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
-
-    subs = db.get_subscriptions_by_merchant(validated_address)
+@app.get("/subscriptions/merchant/{merchant_domain}")
+async def get_subscriptions_by_merchant(merchant_domain: str):
+    subs = db.get_subscriptions_by_merchant(merchant_domain=merchant_domain)
     return [sub.to_json() for sub in subs]
 
-@app.get("/subscriptions/merchant/{address}/userid/{userid}")
-async def get_subscriptions_by_merchant_and_userid(address: str, userid: str):
-    try:
-        validated_address = to_checksum_address(address)
-    except Exception:
-        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
-
-    subs = db.get_subscriptions_by_merchant_and_user(merchant_address=validated_address, userid=userid)
+@app.get("/subscriptions/merchant/{merchant_domain}/userid/{userid}")
+async def get_subscriptions_by_merchant_and_userid(merchant_domain: str, userid: str):
+    subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
     return [sub.to_json() for sub in subs]
 
-@app.get("/subscription/merchant/{address}/id/{subscription_id}")
-async def get_subscription_by_merchant_and_subscriptionid(address: str, subsciption_id: str):
-    try:
-        validated_address = to_checksum_address(address)
-    except Exception:
-        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
-
+@app.get("/subscription/merchant/{merchant_domain}/id/{subscription_id}")
+async def get_subscription_by_merchant_and_subscriptionid(merchant_domain: str, subsciption_id: str):
     sub = db.get_subscription_by_merchant_and_subscriptionid(
-        address=validated_address,
+        merchant_domain=merchant_domain,
         subscription_id=subsciption_id,
     )
 
@@ -153,91 +141,10 @@ async def get_subscription_logs(subscription_hash: str):
     return [log.to_json() for log in logs]
 
 
-@app.get("/is_active/merchant/{address}/userid/{userid}")
-async def does_user_have_an_active_subscription(address: str, userid: str):
-    try:
-        validated_address = to_checksum_address(address)
-    except Exception:
-        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
-
-    subs = db.get_subscriptions_by_merchant_and_user(merchant_address=validated_address, userid=userid)
+@app.get("/is_active/merchant/{merchant_domain}/userid/{userid}")
+async def does_user_have_an_active_subscription(merchant_domain: str, userid: str):
+    subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
     return any([s.is_active for s in subs])
-
-
-class HashSubscriptionData(BaseModel):
-    merchant_address: str
-    userid: str
-    merchant_domain: str
-    product: str
-    nonce: str
-    token_address: str
-    uint_amount: int
-    period: int
-    free_trial_length: int
-    payment_period: int
-    initiator: str
-
-
-@app.post("/subscription/hash")
-async def hash_subscription(data: HashSubscriptionData):
-    try:
-        validated_merchant_address = to_checksum_address(data.merchant_address)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f'Merchant address must be a valid crypto address. {str(e)}')
-    
-    if len(data.userid) > 32:
-        raise HTTPException(status_code=400, detail="User id length must not exceed 32 symbols")
-    
-    if len(data.merchant_domain) > 32:
-        raise HTTPException(status_code=400, detail="Merchant domain length must not exceed 32 symbols")
-    
-    if len(data.product) > 32:
-        raise HTTPException(status_code=400, detail="Product length must not exceed 32 symbols")
-    
-    if len(data.nonce) > 32:
-        raise HTTPException(status_code=400, detail="Nonce length must not exceed 32 symbols")
-    
-    try:
-        validated_token_address = to_checksum_address(data.token_address)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f'Token address must be a valid crypto address. {str(e)}')
-    
-    if data.uint_amount < 0 or data.period < 0 or data.free_trial_length < 0 or data.payment_period < 0:
-        raise HTTPException(status_code=400, detail="uint_amount, period, free_trial_length, payment_period must be greater than zero")
-
-    try:
-        validated_initiator_address = to_checksum_address(data.token_address)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f'Initiator address must be a valid crypto address. {str(e)}')
-    
-    encoded_packed_data = encode([
-        'address',
-        'byte32',
-        'bytes32',
-        'bytes32',
-        'bytes32',
-        'address',
-        'uint256',
-        'uint256',
-        'uint256',
-        'uint256',
-        'address',
-    ], [
-        validated_merchant_address,
-        data.userid.encode(encoding='ascii', errors='replace'),
-        data.merchant_domain.encode(encoding='ascii', errors='replace'),
-        data.product.encode(encoding='ascii', errors='replace'),
-        data.nonce.encode(encoding='ascii', errors='replace'),
-        validated_token_address,
-        data.uint_amount,
-        data.period,
-        data.free_trial_length,
-        data.payment_period,
-        validated_initiator_address
-    ])
-
-    keccak = Web3().solidity_keccak('bytes[]', encoded_packed_data)
-    return keccak
 
 
 @app.on_event("startup")
