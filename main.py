@@ -26,9 +26,9 @@ db = Database(
 )
 
 app_description = '''
-For merchant_domain use your domain. For example `paybeaver.xyz`.
+For `merchant_domain` use your domain. For example `paybeaver.xyz`.
 
-
+The most useful for you is probably the `/is_active` endpoint. Using it you can check whether a certain user has an active subscription or not.
 '''
 
 app = FastAPI(
@@ -81,26 +81,10 @@ async def loop():
         await asyncio.sleep(12)  # Almost no delay in the loop since we want to be checking subscriptions continuously
 
 
-@app.get('/healthcheck')
-async def healthcheck():
-    return 'OK'
-
-
-@app.get('/subscriptions/all')
-async def get_all_subscriptions():
-    subs = db.get_all_subscriptions()
-    return [sub.to_json() for sub in subs]
-
-
-@app.get("/subscriptions/user/{address}")
-async def get_subscriptions_by_user(address: str):
-    try:
-        validated_address = to_checksum_address(address)
-    except Exception:
-        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
-
-    subs = db.get_subscriptions_by_user(validated_address)
-    return [sub.to_json() for sub in subs]
+@app.get("/is_active/merchant/{merchant_domain}/userid/{userid}")
+async def does_user_have_an_active_subscription(merchant_domain: str, userid: str):
+    subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
+    return any([s.is_active for s in subs])
 
 
 @app.get("/subscriptions/merchant/{merchant_domain}")
@@ -108,10 +92,12 @@ async def get_subscriptions_by_merchant(merchant_domain: str):
     subs = db.get_subscriptions_by_merchant(merchant_domain=merchant_domain)
     return [sub.to_json() for sub in subs]
 
+
 @app.get("/subscriptions/merchant/{merchant_domain}/userid/{userid}")
 async def get_subscriptions_by_merchant_and_userid(merchant_domain: str, userid: str):
     subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
     return [sub.to_json() for sub in subs]
+
 
 @app.get("/subscription/merchant/{merchant_domain}/id/{subscription_id}")
 async def get_subscription_by_merchant_and_subscriptionid(merchant_domain: str, subsciption_id: str):
@@ -135,16 +121,32 @@ async def get_subscription_by_hash(subscription_hash: str):
     return sub.to_json()
 
 
+@app.get("/subscriptions/user/{address}")
+async def get_subscriptions_by_user(address: str):
+    try:
+        validated_address = to_checksum_address(address)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
+
+    subs = db.get_subscriptions_by_user(validated_address)
+    return [sub.to_json() for sub in subs]
+
+
 @app.get("/subscription/{subscription_hash}/logs")
 async def get_subscription_logs(subscription_hash: str):
     logs = db.get_subscription_logs(subscription_hash)
     return [log.to_json() for log in logs]
 
 
-@app.get("/is_active/merchant/{merchant_domain}/userid/{userid}")
-async def does_user_have_an_active_subscription(merchant_domain: str, userid: str):
-    subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
-    return any([s.is_active for s in subs])
+@app.get('/subscriptions/all')
+async def get_all_subscriptions():
+    subs = db.get_all_subscriptions()
+    return [sub.to_json() for sub in subs]
+
+
+@app.get('/healthcheck')
+async def healthcheck():
+    return 'OK'
 
 
 @app.on_event("startup")
