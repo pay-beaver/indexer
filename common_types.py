@@ -4,6 +4,7 @@ import logging
 import sys
 from eth_typing import ChecksumAddress, HexStr
 from web3.types import Wei
+from api_models import SerializedSubscription
 
 from utils import ts_now
 
@@ -32,8 +33,8 @@ class Subscription(NamedTuple):
     merchant_address: ChecksumAddress
     subscription_id: str | None
     user_id: str | None
-    merchant_domain: str | None
-    product: str | None
+    merchant_domain: str
+    product: str
     token_address: ChecksumAddress
     token_symbol: str
     token_decimals: int
@@ -77,30 +78,30 @@ class Subscription(NamedTuple):
 
         return True
         
-    def to_json(self) -> dict[str, Any]:
-        return {
-            'subscription_hash': self.subscription_hash,
-            'chain': self.chain.name.lower(),
-            'user_address': self.user_address,
-            'merchant_address': self.merchant_address,
-            'subscription_id': self.subscription_id,
-            'merchant_domain': self.merchant_domain,
-            'product': self.product,
-            'token_address': self.token_address,
-            'token_symbol': self.token_symbol,
-            'token_decimals': self.token_decimals,
-            'uint_amount': self.uint_amount,
-            'human_amount': self.human_amount,
-            'period': self.period,
-            'start_ts': self.start_ts,
-            'payment_period': self.payment_period,
-            'payments_made': self.payments_made,
-            'terminated': self.terminated,
-            'initiator': self.initiator,
-            'status': self.status,
-            'is_active': self.is_active,
-            'next_payment_at': self.next_payment_at,
-        }
+    def to_json(self) -> SerializedSubscription:
+        return SerializedSubscription(
+            subscription_hash=self.subscription_hash,
+            chain=self.chain.name.lower(),
+            user_address=self.user_address,
+            merchant_address=self.merchant_address,
+            subscription_id=self.subscription_id,
+            merchant_domain=self.merchant_domain,
+            product=self.product,
+            token_address=self.token_address,
+            token_symbol=self.token_symbol,
+            token_decimals=self.token_decimals,
+            uint_amount=self.uint_amount,
+            human_amount=self.human_amount,
+            period=self.period,
+            start_ts=self.start_ts,
+            payment_period=self.payment_period,
+            payments_made=self.payments_made,
+            terminated=self.terminated,
+            initiator=self.initiator,
+            status=self.status,
+            is_active=self.is_active,
+            next_payment_at=self.next_payment_at,
+        )
 
     def to_db(self) -> tuple:
         return (

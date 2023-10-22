@@ -6,6 +6,7 @@ import asyncio
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from api_models import SerializedSubscription
 
 from chain_indexer import ChainIndexer
 from common_types import Chain
@@ -82,25 +83,25 @@ async def loop():
 
 
 @app.get("/is_active/merchant/{merchant_domain}/userid/{userid}")
-async def does_user_have_an_active_subscription(merchant_domain: str, userid: str):
+async def does_user_have_an_active_subscription(merchant_domain: str, userid: str) -> bool:
     subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
     return any([s.is_active for s in subs])
 
 
 @app.get("/subscriptions/merchant/{merchant_domain}")
-async def get_subscriptions_by_merchant(merchant_domain: str):
+async def get_subscriptions_by_merchant(merchant_domain: str) -> list[SerializedSubscription]:
     subs = db.get_subscriptions_by_merchant(merchant_domain=merchant_domain)
     return [sub.to_json() for sub in subs]
 
 
 @app.get("/subscriptions/merchant/{merchant_domain}/userid/{userid}")
-async def get_subscriptions_by_merchant_and_userid(merchant_domain: str, userid: str):
+async def get_subscriptions_by_merchant_and_userid(merchant_domain: str, userid: str) -> list[SerializedSubscription]:
     subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
     return [sub.to_json() for sub in subs]
 
 
 @app.get("/subscription/merchant/{merchant_domain}/id/{subscription_id}")
-async def get_subscription_by_merchant_and_subscriptionid(merchant_domain: str, subsciption_id: str):
+async def get_subscription_by_merchant_and_subscriptionid(merchant_domain: str, subsciption_id: str) -> SerializedSubscription:
     sub = db.get_subscription_by_merchant_and_subscriptionid(
         merchant_domain=merchant_domain,
         subscription_id=subsciption_id,
@@ -113,7 +114,7 @@ async def get_subscription_by_merchant_and_subscriptionid(merchant_domain: str, 
 
 
 @app.get("/subscription/{subscription_hash}")
-async def get_subscription_by_hash(subscription_hash: str):
+async def get_subscription_by_hash(subscription_hash: str) -> SerializedSubscription:
     sub = db.get_subscription_by_hash(subscription_hash)
     if sub is None:
         raise HTTPException(status_code=404, detail="Subscription not found")
@@ -122,7 +123,7 @@ async def get_subscription_by_hash(subscription_hash: str):
 
 
 @app.get("/subscriptions/user/{address}")
-async def get_subscriptions_by_user(address: str):
+async def get_subscriptions_by_user(address: str) -> list[SerializedSubscription]:
     try:
         validated_address = to_checksum_address(address)
     except Exception:
@@ -139,7 +140,7 @@ async def get_subscription_logs(subscription_hash: str):
 
 
 @app.get('/subscriptions/all')
-async def get_all_subscriptions():
+async def get_all_subscriptions() -> list[SerializedSubscription]:
     subs = db.get_all_subscriptions()
     return [sub.to_json() for sub in subs]
 

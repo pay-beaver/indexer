@@ -71,6 +71,9 @@ class ChainIndexer:
                         logging.error(f"Could not load json metadata for new subscription log {log} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
                         continue
 
+                    if 'merchant_domain' not in metadata or 'product' not in metadata:
+                        logging.error(f"No merchant domain ot product was specified in metadata {metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}")
+
                     subscription = Subscription(
                         subscription_hash=log.args.subscriptionHash.hex(),
                         chain=self.chain,
@@ -78,8 +81,8 @@ class ChainIndexer:
                         merchant_address=log.args.merchant,
                         subscription_id=metadata.get('subscription_id'),
                         user_id=metadata.get('user_id'),
-                        merchant_domain=metadata.get('merchant_domain'),
-                        product=metadata.get('product'),
+                        merchant_domain=metadata['merchant_domain'],
+                        product=metadata['product'],
                         token_address=log.args.token,
                         token_symbol=symbol,
                         token_decimals=decimals,
