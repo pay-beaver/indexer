@@ -6,8 +6,8 @@ from web3.types import Wei
 
 SEPOLIA_CONFIG = ChainConfig(
   chain=Chain.SEPOLIA,
-  router_address=cast(ChecksumAddress, '0xe9265fa920552fE26DffCe55C5606B27eceE9c89'),
-  min_block=4528086,
+  router_address=cast(ChecksumAddress, '0xcfA22C9BF50F200F07482b6176bC306f7f9e5aA5'),
+  min_block=4545984,
   rpc='https://eth-sepolia-public.unifra.io',
   priority_fee_wei=Wei(int(1.5 * 10**9)),
 )

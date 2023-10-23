@@ -65,24 +65,36 @@ class ChainIndexer:
                     decimals = await token_contract.functions.decimals().call()
                     symbol = await token_contract.functions.symbol().call()
 
-                    try:
-                        metadata: dict = json.loads(log.args.metadata)
-                    except Exception:
-                        logging.error(f"Could not load json metadata for new subscription log {log} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
+                    # First byte is the version of metadata encoding. Currently there is only one encoding possible (partial hash encoding),
+                    # so we just skip it.
+                    metadata_partial_hash = log.args.metadata[1:].hex()
+                    serialized_metadata = self.db.get_metadata_by_partial_hash(metadata_partial_hash)
+                    if serialized_metadata is None:
+                        logging.error(f"No metadata was found in the database for metadata partial hash {metadata_partial_hash}")
                         continue
 
-                    if 'merchant_domain' not in metadata or 'product' not in metadata:
-                        logging.error(f"No merchant domain ot product was specified in metadata {metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}")
+                    try:
+                        metadata: dict = json.loads(serialized_metadata)
+                    except Exception:
+                        logging.error(f"Could not load json metadata {serialized_metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
+                        continue
+
+                    try:
+                        merchant_domain = metadata['merchantDomain']
+                        product = metadata['product']
+                    except KeyError as e:
+                        logging.error(f"No {str(e)} was specified in metadata {metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}")
+                        continue
 
                     subscription = Subscription(
                         subscription_hash=log.args.subscriptionHash.hex(),
                         chain=self.chain,
                         user_address=log.args.user,
                         merchant_address=log.args.merchant,
-                        subscription_id=metadata.get('subscription_id'),
-                        user_id=metadata.get('user_id'),
-                        merchant_domain=metadata['merchant_domain'],
-                        product=metadata['product'],
+                        subscription_id=metadata.get('subscriptionId'),
+                        user_id=metadata.get('userId'),
+                        merchant_domain=merchant_domain,
+                        product=product,
                         token_address=log.args.token,
                         token_symbol=symbol,
                         token_decimals=decimals,

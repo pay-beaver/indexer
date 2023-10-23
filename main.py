@@ -4,8 +4,9 @@ import traceback
 from dotenv import load_dotenv
 import asyncio
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from web3 import Web3
 from api_models import SerializedSubscription
 
 from chain_indexer import ChainIndexer
@@ -143,6 +144,17 @@ async def get_subscription_logs(subscription_hash: str):
 async def get_all_subscriptions() -> list[SerializedSubscription]:
     subs = db.get_all_subscriptions()
     return [sub.to_json() for sub in subs]
+
+
+@app.post('/hash_metadata')
+async def hash_metadata(request: Request) -> str:
+    metadata = await request.body()
+    metadata_hash_hex: str = Web3().solidity_keccak(['bytes'], [metadata]).hex()
+    db.store_hashed_metadata(
+        metadata_hash=metadata_hash_hex,
+        metadata_content=metadata.decode(encoding='utf-8', errors='replace'),
+    )
+    return metadata_hash_hex
 
 
 @app.get('/healthcheck')

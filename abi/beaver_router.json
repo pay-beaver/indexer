@@ -5,6 +5,11 @@
         "internalType": "address",
         "name": "owner",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -52,9 +57,9 @@
       },
       {
         "indexed": false,
-        "internalType": "string",
+        "internalType": "bytes32",
         "name": "metadata",
-        "type": "string"
+        "type": "bytes32"
       },
       {
         "indexed": false,
@@ -227,9 +232,9 @@
         "type": "address"
       },
       {
-        "internalType": "string",
+        "internalType": "bytes32",
         "name": "metadata",
-        "type": "string"
+        "type": "bytes32"
       },
       {
         "internalType": "address",
@@ -294,9 +299,9 @@
         "type": "address"
       },
       {
-        "internalType": "string",
+        "internalType": "bytes32",
         "name": "metadata",
-        "type": "string"
+        "type": "bytes32"
       },
       {
         "internalType": "address",

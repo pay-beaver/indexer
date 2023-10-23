@@ -33,3 +33,8 @@ CREATE TABLE subscription_log(
   message TEXT NOT NULL,
   timestamp BIGINT NOT NULL
 );
+
+CREATE TABLE hashed_metadata(
+  hash TEXT NOT NULL PRIMARY KEY,
+  metadata TEXT NOT NULL
+);
