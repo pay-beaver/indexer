@@ -1,9 +1,9 @@
 import json
 import traceback
-from typing import cast
+from typing import Any, cast
 from eth_typing import ChecksumAddress
 from requests import HTTPError
-from common_types import Chain, Subscription, SubscriptionLog
+from common_types import Chain, Product, Subscription, SubscriptionLog
 from database import Database
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from web3.types import Wei
@@ -46,6 +46,23 @@ class ChainIndexer:
         self.router = self.web3.eth.contract(address=router_address, abi=BEAVER_ROUTER_ABI)
         self.account: LocalAccount = self.web3.eth.account.from_key(initiator_private_key)
         self.priority_fee_wei = priority_fee_wei
+    
+    def get_metadata_by_raw_metadata(self, metadata_raw: bytes, description: str) -> dict[str, Any] | None:
+        # First byte is the version of metadata encoding. Currently
+        # there is only one encoding, so we skip it.
+        metadata_partial_hash = metadata_raw[1:].hex()
+        product_metadata = self.db.get_metadata_by_partial_hash(metadata_partial_hash)
+        if product_metadata is None:
+            logging.error(f"No metadata was found in the database for metadata partial hash {metadata_partial_hash} for {description} for chain {self.chain.name} and router {self.router.address}")
+            return None
+
+        try:
+            metadata_dict: dict = json.loads(product_metadata)
+        except Exception:
+            logging.error(f"Could not load json metadata {product_metadata} for {description} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
+            return None
+
+        return metadata_dict
 
     async def discover_new_subscriptions(self):
         last_checked_block = self.db.get_last_checked_subscriptions_block(self.chain, self.min_block)
@@ -61,52 +78,82 @@ class ChainIndexer:
                 )
                 for log in new_logs:
                     logging.info(f"Found new subscription log for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
-                    token_contract = self.web3.eth.contract(address=log.args.token, abi=ERC20_ABI)
-                    decimals = await token_contract.functions.decimals().call()
-                    symbol = await token_contract.functions.symbol().call()
+                    subscription_hash = log.args.subscriptionHash.hex()
+                    product_hash_bytes = log.args.productHash
+                    product_hash_hex = product_hash_bytes.hex()
+                    user_address = log.args.user
+                    start_ts = log.args.start
+                    subscription_metadata_raw = log.args.subscriptionMetadata
 
-                    # First byte is the version of metadata encoding. Currently there is only one encoding possible (partial hash encoding),
-                    # so we just skip it.
-                    metadata_partial_hash = log.args.metadata[1:].hex()
-                    serialized_metadata = self.db.get_metadata_by_partial_hash(metadata_partial_hash)
-                    if serialized_metadata is None:
-                        logging.error(f"No metadata was found in the database for metadata partial hash {metadata_partial_hash}")
-                        continue
+                    product = self.db.get_product_by_hash(product_hash_hex)
+                    if product is None:
+                        product_raw = await self.router.functions.products(product_hash_bytes).call()
+                        (
+                            merchant_address,
+                            token_address,
+                            uint_amount,
+                            period,
+                            free_trial_length,
+                            payment_period,
+                            product_metadata_raw,
+                        ) = product_raw
 
-                    try:
-                        metadata: dict = json.loads(serialized_metadata)
-                    except Exception:
-                        logging.error(f"Could not load json metadata {serialized_metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
-                        continue
+                        token_contract = self.web3.eth.contract(address=token_address, abi=ERC20_ABI)
+                        token_decimals = await token_contract.functions.decimals().call()
+                        token_symbol = await token_contract.functions.symbol().call()
+                        
+                        
+                        product_metadata_dict = self.get_metadata_by_raw_metadata(
+                            metadata_raw=product_metadata_raw,
+                            description=str(product_raw),
+                        )
+                        if product_metadata_dict is None:
+                            continue  # Error was already logged in get_metadata_by_raw_metadata
 
-                    try:
-                        merchant_domain = metadata['merchantDomain']
-                        product = metadata['product']
-                    except KeyError as e:
-                        logging.error(f"No {str(e)} was specified in metadata {metadata} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}")
-                        continue
+                        try:
+                            merchant_domain = product_metadata_dict['merchantDomain']
+                            product_name = product_metadata_dict['productName']
+                        except KeyError as e:
+                            logging.error(f"No {str(e)} was specified in metadata {product_metadata_dict} for new subscription log {log} for chain {self.chain.name} and router {self.router.address}")
+                            continue
 
+                        product = Product(
+                            product_hash=product_hash_hex,
+                            chain=self.chain,
+                            merchant_address=merchant_address,
+                            token_address=token_address,
+                            token_symbol=token_symbol,
+                            token_decimals=token_decimals,
+                            uint_amount=uint_amount,
+                            human_amount=uint_amount / 10 ** token_decimals,
+                            period=period,
+                            free_trial_length=free_trial_length,
+                            payment_period=payment_period,
+                            metadata_hash=product_metadata_raw.hex(),
+                            merchant_domain=merchant_domain,
+                            product_name=product_name,
+                        )
+
+                        self.db.add_product(product)
+                        logging.info(f"Added product {product} for chain {self.chain.name} and router {self.router.address}")
+
+                    subscription_metadata_dict = self.get_metadata_by_raw_metadata(
+                        metadata_raw=subscription_metadata_raw,
+                        description=f'Subscription {str(subscription_hash)}',
+                    ) or {}  # subscription metadata is optional
+   
                     subscription = Subscription(
-                        subscription_hash=log.args.subscriptionHash.hex(),
-                        chain=self.chain,
-                        user_address=log.args.user,
-                        merchant_address=log.args.merchant,
-                        subscription_id=metadata.get('subscriptionId'),
-                        user_id=metadata.get('userId'),
-                        merchant_domain=merchant_domain,
+                        subscription_hash=subscription_hash,
                         product=product,
-                        token_address=log.args.token,
-                        token_symbol=symbol,
-                        token_decimals=decimals,
-                        uint_amount=log.args.amount,
-                        human_amount=log.args.amount / 10 ** decimals,
-                        period=log.args.period,
-                        start_ts=log.args.start,
-                        payment_period=log.args.paymentPeriod,
+                        user_address=user_address,
+                        start_ts=start_ts,
                         payments_made=0,
                         terminated=False,
-                        initiator=log.args.initiator,
+                        metadata_hash=subscription_metadata_raw.hex(),
+                        subscription_id=subscription_metadata_dict.get('subscriptionId'),
+                        user_id=subscription_metadata_dict.get('userId'),
                     )
+                    
                     self.db.add_subscription(subscription)
                     logging.info(f"Added new subscription {subscription} for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
 
@@ -188,31 +235,31 @@ class ChainIndexer:
             payment_number = subscription.payments_made + 1
             logging.info(f'Attempting payment {payment_number} for subscription {subscription} on chain {self.chain.name} and router {self.router.address}')
 
-            token_contract = self.web3.eth.contract(address=subscription.token_address, abi=ERC20_ABI)
+            token_contract = self.web3.eth.contract(address=subscription.product.token_address, abi=ERC20_ABI)
             user_balance_uint = await token_contract.functions.balanceOf(subscription.user_address).call()
-            if user_balance_uint < subscription.uint_amount:
-                logging.error(f"Error while attempting payment for subscription {subscription.subscription_hash} for chain {self.chain.name} and router {self.router.address}: user only has {user_balance_uint / 10 ** subscription.token_decimals} tokens while {subscription.human_amount} is required to make a payment.")
+            if user_balance_uint < subscription.product.uint_amount:
+                logging.error(f"Error while attempting payment for subscription {subscription.subscription_hash} for chain {self.chain.name} and router {self.router.address}: user only has {user_balance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.")
                 # TODO: notify merchant and user about the problem.
                 self.db.add_subscription_log(SubscriptionLog(
                     log_id=-1,  # assigned at the db level
                     log_type='payment-issue',
                     subscription_hash=subscription.subscription_hash,
                     payment_number=payment_number,
-                    message=f'Could not pay the subscription due to: user only has {user_balance_uint / 10 ** subscription.token_decimals} tokens while {subscription.human_amount} is required to make a payment.',
+                    message=f'Could not pay the subscription due to: user only has {user_balance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.',
                     timestamp=ts_now(),
                 ))
                 continue
 
             allowance_uint = await token_contract.functions.allowance(subscription.user_address, self.router.address).call()
-            if allowance_uint < subscription.uint_amount:
-                logging.error(f"Error while attempting payment for subscription {subscription.subscription_hash} for chain {self.chain.name} and router {self.router.address}: allowance is onlt {user_balance_uint / 10 ** subscription.token_decimals} tokens while {subscription.human_amount} is required to make a payment.")
+            if allowance_uint < subscription.product.uint_amount:
+                logging.error(f"Error while attempting payment for subscription {subscription.subscription_hash} for chain {self.chain.name} and router {self.router.address}: allowance is onlt {user_balance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.")
                 # TODO: notify merchant and user about the problem.
                 self.db.add_subscription_log(SubscriptionLog(
                     log_id=-1,  # assigned at the db level
                     log_type='payment-issue',
                     subscription_hash=subscription.subscription_hash,
                     payment_number=payment_number,
-                    message=f'Could not pay the subscription due to: allowance is only {user_balance_uint / 10 ** subscription.token_decimals} tokens while {subscription.human_amount} is required to make a payment.',
+                    message=f'Could not pay the subscription due to: allowance is only {user_balance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.',
                     timestamp=ts_now(),
                 ))
                 continue
@@ -222,14 +269,14 @@ class ChainIndexer:
             else:
                 gas = GAS_PER_PAYMENT
             max_fee_wei, compensation_amount = await self.calculate_compensation_amount_human(
-                token_address=subscription.token_address,
+                token_address=subscription.product.token_address,
                 gas=gas,
             )
             try:
                 nonce = await self.web3.eth.get_transaction_count(self.account.address)
                 tx_data = await self.router.functions.makePayment(
                     bytes.fromhex(subscription.subscription_hash),
-                    int(compensation_amount * 10 ** subscription.token_decimals),
+                    int(compensation_amount * 10 ** subscription.product.token_decimals),
                 ).build_transaction({
                     'from': self.account.address,
                     'nonce': nonce,

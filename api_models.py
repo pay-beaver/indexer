@@ -1,13 +1,9 @@
 from pydantic import BaseModel
 
-class SerializedSubscription(BaseModel):
-    subscription_hash: str
+class SerializedProduct(BaseModel):
+    product_hash: str
     chain: str
-    user_address: str
     merchant_address: str
-    subscription_id: str | None
-    merchant_domain: str
-    product: str
     token_address: str
     token_symbol: str
     token_decimals: int
@@ -15,11 +11,22 @@ class SerializedSubscription(BaseModel):
     human_amount: float
     # TODO: there is a discrepancy. Gateway accepts period as a human string and here we return it in seconds.
     period: int
-    start_ts: int
+    free_trial_length: int
     payment_period: int
+    metadata_hash: str
+    merchant_domain: str
+    product_name: str
+
+class SerializedSubscription(BaseModel):
+    subscription_hash: str
+    product: SerializedProduct
+    user_address: str
+    start_ts: int
     payments_made: int
     terminated: bool
-    initiator: str
+    metadata_hash: str
+    subscription_id: str | None
+    user_id: str | None
     status: str
     is_active: bool
     next_payment_at: int

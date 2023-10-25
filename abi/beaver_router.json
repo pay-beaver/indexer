@@ -7,6 +7,11 @@
         "type": "address"
       },
       {
+        "internalType": "address",
+        "name": "defaultInitiator",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "fee",
         "type": "uint256"
@@ -14,6 +19,37 @@
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "merchant",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newInitiator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldInitiator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "changedBy",
+        "type": "address"
+      }
+    ],
+    "name": "InitiatorChanged",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -40,14 +76,8 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "subscriptionHash",
+        "name": "productHash",
         "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
       },
       {
         "indexed": true,
@@ -56,13 +86,7 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "metadata",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -82,7 +106,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "start",
+        "name": "freeTrialLength",
         "type": "uint256"
       },
       {
@@ -93,9 +117,46 @@
       },
       {
         "indexed": false,
+        "internalType": "bytes32",
+        "name": "productMetadata",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ProductCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "subscriptionHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "productHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
         "internalType": "address",
-        "name": "initiator",
+        "name": "user",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "subscriptionMetadata",
+        "type": "bytes32"
       }
     ],
     "name": "SubscriptionStarted",
@@ -109,10 +170,35 @@
         "internalType": "bytes32",
         "name": "subscriptionHash",
         "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "terminatedBy",
+        "type": "address"
       }
     ],
     "name": "SubscriptionTerminated",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newDefaultInitiator",
+        "type": "address"
+      }
+    ],
+    "name": "changeDefaultInitiator",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [
@@ -123,6 +209,30 @@
       }
     ],
     "name": "changeFee",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "merchant",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newInitiator",
+        "type": "address"
+      }
+    ],
+    "name": "changeInitiator",
     "outputs": [
       {
         "internalType": "bool",
@@ -203,6 +313,74 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "merchant",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "productMetadata",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "period",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "freeTrialLength",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "paymentPeriod",
+        "type": "uint256"
+      }
+    ],
+    "name": "createProductIfDoesntExist",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "productHash",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "earnedFees",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes32",
         "name": "subscriptionHash",
         "type": "bytes32"
@@ -228,12 +406,99 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "paymentInitiators",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "productNonce",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "products",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "merchant",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "period",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "freeTrialLength",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "paymentPeriod",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "productMetadata",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "merchant",
         "type": "address"
       },
       {
         "internalType": "bytes32",
-        "name": "metadata",
+        "name": "productMetadata",
         "type": "bytes32"
       },
       {
@@ -262,9 +527,33 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "initiator",
-        "type": "address"
+        "internalType": "bytes32",
+        "name": "subscriptionMetadata",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setupEnvironmentAndStartSubscription",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subscriptionHash",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "productHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subscriptionMetadata",
+        "type": "bytes32"
       }
     ],
     "name": "startSubscription",
@@ -289,43 +578,18 @@
     "name": "subscriptions",
     "outputs": [
       {
+        "internalType": "bytes32",
+        "name": "productHash",
+        "type": "bytes32"
+      },
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "merchant",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "metadata",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "period",
-        "type": "uint256"
-      },
-      {
         "internalType": "uint256",
         "name": "start",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "paymentPeriod",
         "type": "uint256"
       },
       {
@@ -339,9 +603,9 @@
         "type": "bool"
       },
       {
-        "internalType": "address",
-        "name": "initiator",
-        "type": "address"
+        "internalType": "bytes32",
+        "name": "subscriptionMetadata",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -364,6 +628,30 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "txCompensations",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]

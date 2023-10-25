@@ -3,26 +3,44 @@ CREATE TABLE setting(
   value TEXT NOT NULL
 );
 
-CREATE TABLE subscription(
+CREATE TABLE hashed_metadata(
+  hash TEXT NOT NULL PRIMARY KEY,
+  metadata TEXT NOT NULL
+);
+
+CREATE TABLE merchant_initiator(
+  merchant_address TEXT NOT NULL PRIMARY KEY,
+  initiator_address TEXT NOT NULL
+);
+
+
+CREATE TABLE product(
   hash TEXT NOT NULL PRIMARY KEY,
   chain TEXT NOT NULL,
-  user_address TEXT NOT NULL,
   merchant_address TEXT NOT NULL,
-  subscription_id TEXT, -- nullable
-  user_id TEXT, -- nullable
-  merchant_domain TEXT NOT NULL,
-  product TEXT NOT NULL,
   token_address TEXT NOT NULL,
   token_symbol TEXT NOT NULL,
   token_decimals BIGINT NOT NULL,
   uint_amount NUMERIC(32, 0) NOT NULL, -- 10^18 * token amount = a big number of digits can happen
   human_amount FLOAT NOT NULL,
   period BIGINT NOT NULL,
-  start_ts BIGINT NOT NULL,
+  free_trial_length BIGINT NOT NULL,
   payment_period BIGINT NOT NULL,
+  metadata_hash TEXT NOT NULL,
+  merchant_domain TEXT NOT NULL,
+  product_name TEXT NOT NULL
+);
+
+CREATE TABLE subscription(
+  hash TEXT NOT NULL PRIMARY KEY,
+  product_hash TEXT NOT NULL REFERENCES product(hash) ON DELETE CASCADE,
+  user_address TEXT NOT NULL,
+  start_ts BIGINT NOT NULL,
   payments_made BIGINT NOT NULL,
   terminated BOOLEAN NOT NULL,
-  initiator TEXT NOT NULL
+  metadata_hash TEXT NOT NULL,
+  subscription_id TEXT, -- nullable
+  user_id TEXT -- nullable
 );
 
 CREATE TABLE subscription_log(
@@ -32,9 +50,4 @@ CREATE TABLE subscription_log(
   payment_number BIGINT NOT NULL,
   message TEXT NOT NULL,
   timestamp BIGINT NOT NULL
-);
-
-CREATE TABLE hashed_metadata(
-  hash TEXT NOT NULL PRIMARY KEY,
-  metadata TEXT NOT NULL
 );

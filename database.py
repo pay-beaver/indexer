@@ -3,7 +3,7 @@ import psycopg2
 from contextlib import contextmanager
 from threading import Lock
 
-from common_types import Chain, Subscription, SubscriptionLog
+from common_types import Chain, Product, Subscription, SubscriptionLog
 
 with open('db_schema.sql') as f:
     DB_SCHEMA = f.read()
@@ -101,30 +101,51 @@ class Database:
             name = f'{chain.name.lower()}_initiator_available'
             cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, 'stuck!!!!!'))
 
-    def add_subscription(self, subscription: Subscription) -> None:
+    def add_product(self, product: Product) -> None:
         with self.context() as cursor:
             cursor.execute(
-                '''INSERT INTO subscription(
+                '''INSERT INTO product(
                     hash,
                     chain,
-                    user_address,
                     merchant_address,
-                    subscription_id,
-                    user_id,
-                    merchant_domain,
-                    product,
                     token_address,
                     token_symbol,
                     token_decimals,
                     uint_amount,
                     human_amount,
                     period,
-                    start_ts,
+                    free_trial_length,
                     payment_period,
+                    metadata_hash,
+                    merchant_domain,
+                    product_name
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
+                product.to_db(),
+            )
+    
+    def get_product_by_hash(self, product_hash: str) -> Product | None:
+        with self.context() as cursor:
+            cursor.execute('SELECT * FROM product WHERE hash = %s', (product_hash,))
+            result = cursor.fetchone()
+            if result is None:
+                return None
+            
+            return Product.from_db(result)
+    
+    def add_subscription(self, subscription: Subscription) -> None:
+        with self.context() as cursor:
+            cursor.execute(
+                '''INSERT INTO subscription(
+                    hash,
+                    product_hash,
+                    user_address,
+                    start_ts,
                     payments_made,
                     terminated,
-                    initiator
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
+                    metadata_hash,
+                    subscription_id,
+                    user_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
                 subscription.to_db(),
             )
 
@@ -136,51 +157,71 @@ class Database:
         with self.context() as cursor:
             cursor.execute('UPDATE subscription SET terminated = TRUE WHERE hash = %s', (subscription_hash,))
     
+    def load_single_subscription(self, row: tuple) -> Subscription:
+        # TODO: change. All subscription-related fields should be read in a single db query and loaded all at once.
+        product = self.get_product_by_hash(row[1])
+        if product is None:
+            raise AssertionError(f'No corresponding product was found for subscription row {row}!!!!!!!')
+        
+        row_with_product = (row[0], product, *row[2:])
+        return Subscription.from_db(row_with_product)
+
     def get_all_subscriptions(self) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription')
-            return [Subscription.from_db(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+        
+        return [self.load_single_subscription(row) for row in rows]
 
     def get_subscriptions_by_user(self, address: ChecksumAddress) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE user_address = %s', (address,))
-            return [Subscription.from_db(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+        
+        return [self.load_single_subscription(row) for row in rows]
     
     def get_subscriptions_by_merchant(self, merchant_domain: str) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE merchant_domain = %s', (merchant_domain,))
-            return [Subscription.from_db(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+        
+        return [self.load_single_subscription(row) for row in rows]
     
     def get_subscriptions_by_merchant_and_user(self, merchant_domain: str, userid: str) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute("SELECT * FROM subscription WHERE merchant_domain = %s AND user_id = %s", (merchant_domain, userid))
-            return [Subscription.from_db(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+
+        return [self.load_single_subscription(row) for row in rows]
     
     def get_subscription_by_merchant_and_subscriptionid(self, merchant_domain: str, subscription_id: str) -> Subscription | None:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE merchant_domain = %s AND subscription_id=%s ORDER BY start_ts LIMIT 1', (merchant_domain, subscription_id))
             result = cursor.fetchone()
-            if result is None:
-                return None
+
+        if result is None:
+            return None
             
-            return Subscription.from_db(result)
+        return self.load_single_subscription(result)
     
     def get_subscription_by_hash(self, subscription_hash: str) -> Subscription | None:
         with self.context() as cursor:
             cursor.execute('SELECT * FROM subscription WHERE hash = %s', (subscription_hash,))
-            row = cursor.fetchone()
-            if row is None:
-                return None
-            return Subscription.from_db(row)
+            result = cursor.fetchone()
+
+        if result is None:
+            return None
+
+        return self.load_single_subscription(result)
     
     def get_payable_subscriptions(self, chain: Chain, timestamp: int, initiator: ChecksumAddress) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute(
-                '''SELECT * FROM subscription WHERE
+                '''SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash INNER JOIN merchant_initiator ON product.merchant_address = merchant_initiator.merchant_address WHERE
                 chain = %s AND terminated = FALSE AND
                 %s > start_ts + period * payments_made AND
                 %s < start_ts + period * payments_made + payment_period AND
-                initiator = %s AND
+                initiator_address = %s AND
                 %s >= (SELECT GREATEST(MAX(timestamp), 0) FROM subscription_log WHERE
                     subscription_hash = subscription.hash AND
                     log_type = 'payment-issue' AND
@@ -196,7 +237,9 @@ class Database:
                     60 * 60 * 24, # Attempt payments every 24 hours in case of issues 
                 ),
             )
-            return [Subscription.from_db(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+        
+        return [self.load_single_subscription(row) for row in rows]
 
     def add_subscription_log(self, log: SubscriptionLog):
         with self.context() as cursor:
