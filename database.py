@@ -182,14 +182,14 @@ class Database:
     
     def get_subscriptions_by_merchant(self, merchant_domain: str) -> list[Subscription]:
         with self.context() as cursor:
-            cursor.execute('SELECT * FROM subscription WHERE merchant_domain = %s', (merchant_domain,))
+            cursor.execute('SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash WHERE merchant_domain = %s', (merchant_domain,))
             rows = cursor.fetchall()
         
         return [self.load_single_subscription(row) for row in rows]
     
     def get_subscriptions_by_merchant_and_user(self, merchant_domain: str, userid: str) -> list[Subscription]:
         with self.context() as cursor:
-            cursor.execute("SELECT * FROM subscription WHERE merchant_domain = %s AND user_id = %s", (merchant_domain, userid))
+            cursor.execute("SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash WHERE merchant_domain = %s AND user_id = %s", (merchant_domain, userid))
             rows = cursor.fetchall()
 
         return [self.load_single_subscription(row) for row in rows]

@@ -5,3 +5,5 @@ TODO: improve logging so that I don't have to write "for router ... and chain ..
 TODO: change columns metadata_hash to onchain_metadata or something like that because it's encoded metadata, not metadata hash. And first byte is encoding type, not a part of the hash.
 TODO: currently allowance is returrned very weirdly with the default http transport for Sepolia. Sometimes returned allowanace is correct and sometimes it's just zero. If I specify a specific rpc url, then it works just fine. Figure out this incosistency. Also randomly returns nothing when querying product. And after submitting a transaction, it randomly says "block at number XYZ could not be found".
 TODO: when terminating subscription, check that the connect wallet is either user or merchant and not anybody else.
+TODO: setup DB backups.
+TODO: save hashed metadata more permissionlessly. Currently it even makes a problem to migrate metadata from the development database to the production database!
