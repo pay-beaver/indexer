@@ -25,6 +25,24 @@ class Chain(Enum):
     SEPOLIA = 11155111
     MUMBAI = 80001
 
+    def __str__(self) -> str:
+        if self == Chain.SEPOLIA:
+            return 'sepolia'
+        
+        if self == Chain.MUMBAI:
+            return 'polygon-mumbai'
+        
+        raise AssertionError(f'Unknown chain {self}')
+    
+    @staticmethod
+    def load(serialized_chain: str) -> 'Chain':
+        if serialized_chain == str(Chain.SEPOLIA):
+            return Chain.SEPOLIA
+        
+        if serialized_chain == str(Chain.MUMBAI):
+            return Chain.MUMBAI
+
+        raise AssertionError(f'Unknown chain {serialized_chain}')
 
 class Product(NamedTuple):
     product_hash: HexStr
@@ -45,7 +63,7 @@ class Product(NamedTuple):
     def to_json(self) -> SerializedProduct:
         return SerializedProduct(
             product_hash=self.product_hash,
-            chain=self.chain.name.lower(),
+            chain=str(self.chain),
             merchant_address=self.merchant_address,
             token_address=self.token_address,
             token_symbol=self.token_symbol,
@@ -63,7 +81,7 @@ class Product(NamedTuple):
     def to_db(self) -> tuple:
         return (
             self.product_hash,
-            self.chain.name.lower(),
+            str(self.chain),
             self.merchant_address,
             self.token_address,
             self.token_symbol,
@@ -82,7 +100,7 @@ class Product(NamedTuple):
     def from_db(row: tuple) -> 'Product':
         return Product(
             product_hash=row[0],
-            chain=Chain[row[1].upper()],
+            chain=Chain.load(row[1]),
             merchant_address=row[2],
             token_address=row[3],
             token_symbol=row[4],
@@ -190,6 +208,7 @@ class ChainConfig(NamedTuple):
     rpc: str
     min_block: int
     priority_fee_wei: Wei
+    needs_poa_middleware: bool
 
 
 SubscriptionActionType = Literal["payment-issue", "payment-made"]

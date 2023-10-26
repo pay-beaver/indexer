@@ -1,6 +1,6 @@
 import json
 import traceback
-from typing import Any, cast
+from typing import Any
 from eth_typing import ChecksumAddress
 from requests import HTTPError
 from common_types import Chain, Product, Subscription, SubscriptionLog
@@ -11,14 +11,15 @@ from eth_account.signers.local import LocalAccount
 import logging
 from web3.exceptions import TimeExhausted
 from price_oracle import get_token_to_eth_price
+from web3.middleware.geth_poa import async_geth_poa_middleware
 
 
 from utils import ts_now
 
 MAX_LOGS_BLOCK_RANGE = 100
 
-FIRST_PAYMENT_GAS = 110000
-GAS_PER_PAYMENT = 92000
+SECOND_PAYMENT_GAS = 120000
+GAS_PER_PAYMENT = 100000
 
 
 with open("abi/beaver_router.json", 'r') as f:
@@ -37,15 +38,19 @@ class ChainIndexer:
             db: Database,
             min_block: int,
             initiator_private_key: str,
-            priority_fee_wei: Wei
+            priority_fee_wei: Wei,
+            needs_poa_middleware: bool
     ) -> None:
         self.chain = chain
         self.web3 = AsyncWeb3(AsyncHTTPProvider(rpc))
+        if needs_poa_middleware:
+            self.web3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
         self.db = db
         self.min_block = min_block
         self.router = self.web3.eth.contract(address=router_address, abi=BEAVER_ROUTER_ABI)
         self.account: LocalAccount = self.web3.eth.account.from_key(initiator_private_key)
         self.priority_fee_wei = priority_fee_wei
+        logging.info(f"Setup chain indexer. Chain: {self.chain.name}. Initiator: {self.account.address}. Router {self.router.address}")
     
     def get_metadata_by_raw_metadata(self, metadata_raw: bytes, description: str) -> dict[str, Any] | None:
         # First byte is the version of metadata encoding. Currently
@@ -98,11 +103,18 @@ class ChainIndexer:
                             product_metadata_raw,
                         ) = product_raw
 
+                        initiator = await self.router.functions.merchantSettings(merchant_address).call()
+                        self.db.set_merchant_initiator(
+                            merchant_address=merchant_address,
+                            chain=self.chain,
+                            initiator=initiator,
+                        )
+                        logging.info(f"Set initiator to {initiator} for merchant {merchant_address} for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
+
                         token_contract = self.web3.eth.contract(address=token_address, abi=ERC20_ABI)
                         token_decimals = await token_contract.functions.decimals().call()
                         token_symbol = await token_contract.functions.symbol().call()
-                        
-                        
+
                         product_metadata_dict = self.get_metadata_by_raw_metadata(
                             metadata_raw=product_metadata_raw,
                             description=str(product_raw),
@@ -180,7 +192,7 @@ class ChainIndexer:
                         subscription_hash=log.args.subscriptionHash.hex(),
                         new_payments_made=log.args.paymentNumber,
                     )
-                    logging.info(f"Updated payments made for subscription {log.args.subscriptionHash.hex()} to {log.args.paymentNumber} for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
+                    logging.info(f"Updated payments made for subscription (or ignored if subscription is not tracked) {log.args.subscriptionHash.hex()} to {log.args.paymentNumber} for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
                 
                 self.db.set_last_checked_payments_block(self.chain, to_block)
             
@@ -205,7 +217,7 @@ class ChainIndexer:
                     self.db.terminate_subscription(
                         subscription_hash=log.args.subscriptionHash.hex(),
                     )
-                    logging.info(f"Marked subscription {log.args.subscriptionHash.hex()} as terminated for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
+                    logging.info(f"Marked subscription {log.args.subscriptionHash.hex()} as terminated (or ignored if subscription is not tracked) for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
                 
                 self.db.set_last_checked_terminations_block(self.chain, to_block)
             
@@ -214,14 +226,55 @@ class ChainIndexer:
             # If we got an HTTP error - it's okay, we will check again later
             logging.warning(f"Haven't checked all new termination logs for chain {self.chain.name} and router {self.router.address} because of an HTTP error: {traceback.format_exc()}")
     
-    async def calculate_compensation_amount_human(self, token_address: ChecksumAddress, gas: int) -> tuple[Wei, float]:
+    async def discover_new_initiator_changes(self):
+        last_checked_block = self.db.get_last_checked_initiators_block(self.chain, self.min_block)
+        latest_block = await self.web3.eth.block_number
+        logging.info(f"Starting a loop to check new change initiator logs for chain {self.chain.name} and router {self.router.address} from block {last_checked_block + 1} to {latest_block}")
+        try:
+            for from_block in range(last_checked_block + 1, latest_block + 1, MAX_LOGS_BLOCK_RANGE):
+                to_block = min(from_block + MAX_LOGS_BLOCK_RANGE - 1, latest_block)
+                logging.info(f"Checking new change initiator logs for chain {self.chain.name} and router {self.router.address} from block {from_block} to {to_block}")
+                new_logs = await self.router.events.InitiatorChanged().get_logs(  # type: ignore
+                    fromBlock=from_block,
+                    toBlock=to_block,
+                )
+                for log in new_logs:
+                    merchant: ChecksumAddress = log.args.merchant
+                    new_initiator: ChecksumAddress = log.args.newInitiator
+                    self.db.set_merchant_initiator(
+                        merchant_address=merchant,
+                        chain=self.chain,
+                        initiator=new_initiator,
+                    )
+                    logging.info(f"Set initiator to {new_initiator} for merchant {merchant} for chain {self.chain.name} and router {self.router.address} at block {log.blockNumber}")
+                
+                self.db.set_last_checked_initiators_block(self.chain, to_block)
+            
+            logging.info(f"Finished checking new change initiator logs for chain {self.chain.name} and router {self.router.address}")
+        except HTTPError:
+            # If we got an HTTP error - it's okay, we will check again later
+            logging.warning(f"Haven't checked all change initiator logs for chain {self.chain.name} and router {self.router.address} because of an HTTP error: {traceback.format_exc()}")
+    
+    async def calculate_gas_params(self, token_address: ChecksumAddress, gas: int) -> tuple[Wei, Wei, float]:
+        """Returns maxFeePerGas, maxPriorityFee and compensation in token to use for the specified amount of gas for a transaction executed right now."""
         token_to_eth_price = get_token_to_eth_price(chain=self.chain, token_address=token_address)
-        base_fee_wei = await self.web3.eth.gas_price
-        # multiplying by 1.2 to get some reserve against base fee fluctionations
-        max_fee_wei = (base_fee_wei * 1.2) + self.priority_fee_wei
+        
+        latest_block = await self.web3.eth.get_block('latest')
+        latest_base_fee = latest_block.get('baseFeePerGas')
+        if latest_base_fee is None:
+            raise AssertionError(f'Latest base fee was None for block {latest_block} at timestamp {ts_now()}!!!!!!!!!!!!!')
+        
+        latest_priority_fee = await self.web3.eth.max_priority_fee
+        # multiplying by 1.2 to get some reserve against fee fluctionations
+        base_fee_to_use = Wei(int(latest_base_fee * 1.2))
+        # multiplying by 1.1 to have better chances of transaction inclusion than average
+        priority_fee_to_use = Wei(int(latest_priority_fee * 1.1))
+
+        max_fee_wei = Wei(base_fee_to_use + priority_fee_to_use)
         eth_fee = gas * max_fee_wei / 1e18
-        token_fee = eth_fee * token_to_eth_price
-        return Wei(int(max_fee_wei)), token_fee
+        compensation_in_token = eth_fee * token_to_eth_price
+        
+        return max_fee_wei, priority_fee_to_use, compensation_in_token
 
     async def pay_payable_subscriptions(self):
         logging.info(f'Checking payable subscriptions on chain {self.chain.name} and router {self.router.address}')
@@ -263,12 +316,13 @@ class ChainIndexer:
                     timestamp=ts_now(),
                 ))
                 continue
-            
-            if payment_number == 1:
-                gas = FIRST_PAYMENT_GAS
+
+            # First payment is always made at the subscription setup
+            if payment_number == 2:
+                gas = SECOND_PAYMENT_GAS
             else:
                 gas = GAS_PER_PAYMENT
-            max_fee_wei, compensation_amount = await self.calculate_compensation_amount_human(
+            max_fee_wei, priority_fee_wei, compensation_amount = await self.calculate_gas_params(
                 token_address=subscription.product.token_address,
                 gas=gas,
             )
@@ -280,7 +334,7 @@ class ChainIndexer:
                 ).build_transaction({
                     'from': self.account.address,
                     'nonce': nonce,
-                    'maxPriorityFeePerGas': self.priority_fee_wei,
+                    'maxPriorityFeePerGas': priority_fee_wei,
                     'maxFeePerGas': max_fee_wei,
                     'gas': gas,
                 })
@@ -302,18 +356,32 @@ class ChainIndexer:
                 continue
 
             try:
-                await self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                tx_receipt = await self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
             except TimeExhausted:
                 logging.critical(f"Payment tx {tx_hash} for chain {self.chain.name} and router {self.router.address} has not been added to a block yet. We are stuck!!! Need to resolve this ASAP to continue making payments!!!!!")
                 self.db.disable_initiator(self.chain)
+                return
             else:
                 logging.info(f"Payment tx {tx_hash} for chain {self.chain.name} and router {self.router.address} has been added to a block! We are good to go to make further payments!")
-                self.db.update_payments_made(subscription.subscription_hash, payment_number)
+                payment_tx_block = tx_receipt.get('blockNumber')
+                new_payment_logs = await self.router.events.PaymentMade().get_logs(  # type: ignore
+                    fromBlock=payment_tx_block,
+                    toBlock=payment_tx_block,
+                )
+                # TODO: change and check logs in the transaction. If multiple initiators work concurrently, this will fail.
+                if len(new_payment_logs) != 1:
+                    logging.error(f'After making a payment in tx {tx_hash} on chain {self.chain.name} and router {self.router.address}, in the transaction block {payment_tx_block} found payment logs {new_payment_logs}, while expected to find exactly one payment log.')
+                    continue    
+
+                payment_log = new_payment_logs[0]     
+                actual_payment_number = payment_log.args.paymentNumber
+
+                self.db.update_payments_made(subscription.subscription_hash, actual_payment_number)
                 self.db.add_subscription_log(SubscriptionLog(
                     log_id=-1,  # assigned at the db level
                     log_type='payment-made',
                     subscription_hash=subscription.subscription_hash,
-                    payment_number=payment_number,
+                    payment_number=actual_payment_number,
                     message='',  # No need to put anything
                     timestamp=ts_now(),
                 ))

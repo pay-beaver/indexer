@@ -8,11 +8,12 @@ CREATE TABLE hashed_metadata(
   metadata TEXT NOT NULL
 );
 
-CREATE TABLE merchant_initiator(
-  merchant_address TEXT NOT NULL PRIMARY KEY,
-  initiator_address TEXT NOT NULL
+CREATE TABLE merchant(
+  address TEXT NOT NULL,
+  chain TEXT NOT NULL,
+  initiator TEXT NOT NULL,
+  PRIMARY KEY(address, chain)
 );
-
 
 CREATE TABLE product(
   hash TEXT NOT NULL PRIMARY KEY,

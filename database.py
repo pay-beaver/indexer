@@ -47,7 +47,7 @@ class Database:
 
     def get_last_checked_subscriptions_block(self, chain: Chain, min_block: int) -> int:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_subscriptions_block'
+            name = f'{str(chain)}_last_checked_subscriptions_block'
             cursor.execute('SELECT value FROM setting WHERE name = %s', (name,))
             result = cursor.fetchone()
             if result is None:
@@ -57,12 +57,12 @@ class Database:
     
     def set_last_checked_subscriptions_block(self, chain: Chain, block: int) -> None:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_subscriptions_block'
+            name = f'{str(chain)}_last_checked_subscriptions_block'
             cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, block))
 
     def get_last_checked_payments_block(self, chain: Chain, min_block: int) -> int:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_payments_block'
+            name = f'{str(chain)}_last_checked_payments_block'
             cursor.execute('SELECT value FROM setting WHERE name = %s', (name,))
             result = cursor.fetchone()
             if result is None:
@@ -72,12 +72,12 @@ class Database:
     
     def set_last_checked_payments_block(self, chain: Chain, block: int) -> None:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_payments_block'
+            name = f'{str(chain)}_last_checked_payments_block'
             cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, block))
 
     def get_last_checked_terminations_block(self, chain: Chain, min_block: int) -> int:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_terminations_block'
+            name = f'{str(chain)}_last_checked_terminations_block'
             cursor.execute('SELECT value FROM setting WHERE name = %s', (name,))
             result = cursor.fetchone()
             if result is None:
@@ -87,18 +87,33 @@ class Database:
     
     def set_last_checked_terminations_block(self, chain: Chain, block: int) -> None:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_last_checked_terminations_block'
+            name = f'{str(chain)}_last_checked_terminations_block'
             cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, block))
     
+    def get_last_checked_initiators_block(self, chain: Chain, min_block: int) -> int:
+        with self.context() as cursor:
+            name = f'{str(chain)}_last_checked_initiators_block'
+            cursor.execute('SELECT value FROM setting WHERE name = %s', (name,))
+            result = cursor.fetchone()
+            if result is None:
+                return min_block
+            else:
+                return max(min_block, int(result[0]))
+
+    def set_last_checked_initiators_block(self, chain: Chain, block: int) -> None:
+        with self.context() as cursor:
+            name = f'{str(chain)}_last_checked_initiators_block'
+            cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, block))
+
     def get_initiator_available(self, chain: Chain) -> bool:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_initiator_available'
+            name = f'{str(chain)}_initiator_available'
             cursor.execute('SELECT value FROM setting WHERE name = %s', (name,))
             return cursor.fetchone() is None  # If there is no setting set -- the initiator is NOT stuck and good to go!
 
     def disable_initiator(self, chain: Chain) -> None:
         with self.context() as cursor:
-            name = f'{chain.name.lower()}_initiator_available'
+            name = f'{str(chain)}_initiator_available'
             cursor.execute('INSERT INTO setting (name, value) VALUES (%s, %s) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name, value=EXCLUDED.value', (name, 'stuck!!!!!'))
 
     def add_product(self, product: Product) -> None:
@@ -213,15 +228,15 @@ class Database:
             return None
 
         return self.load_single_subscription(result)
-    
+
     def get_payable_subscriptions(self, chain: Chain, timestamp: int, initiator: ChecksumAddress) -> list[Subscription]:
         with self.context() as cursor:
             cursor.execute(
-                '''SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash INNER JOIN merchant_initiator ON product.merchant_address = merchant_initiator.merchant_address WHERE
-                chain = %s AND terminated = FALSE AND
+                '''SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash INNER JOIN merchant ON product.merchant_address = merchant.address AND product.chain = merchant.chain WHERE
+                product.chain = %s AND terminated = FALSE AND
                 %s > start_ts + period * payments_made AND
                 %s < start_ts + period * payments_made + payment_period AND
-                initiator_address = %s AND
+                initiator = %s AND
                 %s >= (SELECT GREATEST(MAX(timestamp), 0) FROM subscription_log WHERE
                     subscription_hash = subscription.hash AND
                     log_type = 'payment-issue' AND
@@ -229,7 +244,7 @@ class Database:
                 ) + %s
                 ''',
                 (
-                    chain.name.lower(),
+                    str(chain),
                     timestamp,
                     timestamp,
                     initiator,
@@ -265,3 +280,16 @@ class Database:
                 return None
 
             return result[0]
+
+    def get_merchant_initiator(self, merchant_address: ChecksumAddress, chain: Chain) -> ChecksumAddress | None:
+        with self.context() as cursor:
+            cursor.execute('SELECT initiator FROM merchant WHERE chain = %s AND address = %s', (str(chain), merchant_address))
+            result = cursor.fetchone()
+            if result is None:
+                return None
+            
+            return result[0]
+    
+    def set_merchant_initiator(self, merchant_address: ChecksumAddress, chain: Chain, initiator: ChecksumAddress) -> None:
+        with self.context() as cursor:
+            cursor.execute('INSERT INTO merchant(address, chain, initiator) VALUES(%s, %s, %s) ON CONFLICT(address, chain) DO UPDATE SET initiator=EXCLUDED.initiator', (merchant_address, str(chain), initiator))

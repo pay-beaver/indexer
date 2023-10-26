@@ -6,18 +6,20 @@ from web3.types import Wei
 
 SEPOLIA_CONFIG = ChainConfig(
   chain=Chain.SEPOLIA,
-  router_address=cast(ChecksumAddress, '0x00d7eA8c8d5e9f488658787Aad2A0C33d33122fC'),
-  min_block=4559622,
+  router_address=cast(ChecksumAddress, '0x2918592c2deaBC44f18C8291ae19999D908c23ff'),
+  min_block=4568104,
   rpc='https://eth-sepolia-public.unifra.io',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),
+  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
+  needs_poa_middleware=False,
 )
 
 MUMBAI_CONFIG = ChainConfig(
   chain=Chain.MUMBAI,
   router_address=cast(ChecksumAddress, '0x9f86fAb93F14B98EFe68786606CcF4113C7c1A0b'),
-  min_block=411905550000,
+  min_block=41675159,
   rpc='https://rpc.ankr.com/polygon_mumbai',
-  priority_fee_wei=Wei(1)
+  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
+  needs_poa_middleware=True,
 )
 
 ALL_CHAINS_CONFIGS = [
