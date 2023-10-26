@@ -4,6 +4,8 @@ TODO: logs should be processed one-by-one fully chronologically. Not the way "fi
 TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log.
 TODO: change columns metadata_hash to onchain_metadata or something like that because it's encoded metadata, not metadata hash. And first byte is encoding type, not a part of the hash.
 TODO: currently allowance is returrned very weirdly with the default http transport for Sepolia. Sometimes returned allowanace is correct and sometimes it's just zero. If I specify a specific rpc url, then it works just fine. Figure out this incosistency. Also randomly returns nothing when querying product. And after submitting a transaction, it randomly says "block at number XYZ could not be found".
-TODO: when terminating subscription, check that the connect wallet is either user or merchant and not anybody else.
+TODO: when terminating subscription, check that the connected wallet is either user or merchant and not anybody else.
 TODO: setup DB backups.
 TODO: save hashed metadata more permissionlessly. Currently it even makes a problem to migrate metadata from the development database to the production database!
+TODO: sometimes gas limit in my Metamask when starting a subscription on Sepolia (haven't checked on other chains) is too low (~22k). Might be related to the rpc problem.
+TODO: add full support for Mumbai to prepare and debug multi-chainability.

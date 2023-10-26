@@ -9,7 +9,6 @@ class SerializedProduct(BaseModel):
     token_decimals: int
     uint_amount: int
     human_amount: float
-    # TODO: there is a discrepancy. Gateway accepts period as a human string and here we return it in seconds.
     period: int
     free_trial_length: int
     payment_period: int
