@@ -2,6 +2,5 @@ TODO: in chain indexer raise errors instead of doing logging.error.
 TODO: there is an incosistency right now that `to_db` method belongs to a type in common_types.py, while the query is generated in database.py. This should be happenning in a single location.
 TODO: logs should be processed one-by-one fully chronologically. Not the way "find all new subscriptions, then find all new payments, then find all terminations".
 TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log.
-TODO: call encoded metadata metadataId, rename hashed_metadata table and store there already final ids, not just hashes. Makes the process easier for all parties and the hash is restorable anyways.
 TODO: on the gateway handle situations when user cancels transaction in their wallet or some error occurs while sending a transaction.
 TODO: manage all development / production variables in a single place. I am too afraid of forgetting to switch something to production when it will be needed.

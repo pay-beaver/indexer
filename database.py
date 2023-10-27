@@ -118,24 +118,12 @@ class Database:
 
     def add_product(self, product: Product) -> None:
         with self.context() as cursor:
+            product_db_dict = product.to_db()
+            columns = list(product_db_dict.keys())
+            values = list(product_db_dict.values())
             cursor.execute(
-                '''INSERT INTO product(
-                    hash,
-                    chain,
-                    merchant_address,
-                    token_address,
-                    token_symbol,
-                    token_decimals,
-                    uint_amount,
-                    human_amount,
-                    period,
-                    free_trial_length,
-                    payment_period,
-                    metadata_cid,
-                    merchant_domain,
-                    product_name
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
-                product.to_db(),
+                f'INSERT INTO product({",".join(columns)}) VALUES ({",".join(["%s"] * len(values))}) ON CONFLICT (hash) DO NOTHING',
+                values,
             )
     
     def get_product_by_hash(self, product_hash: str) -> Product | None:
@@ -149,19 +137,12 @@ class Database:
     
     def add_subscription(self, subscription: Subscription) -> None:
         with self.context() as cursor:
+            subscription_db_dict = subscription.to_db()
+            columns = list(subscription_db_dict.keys())
+            values = list(subscription_db_dict.values())
             cursor.execute(
-                '''INSERT INTO subscription(
-                    hash,
-                    product_hash,
-                    user_address,
-                    start_ts,
-                    payments_made,
-                    terminated,
-                    metadata_cid,
-                    subscription_id,
-                    user_id
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
-                subscription.to_db(),
+                f'INSERT INTO subscription({",".join(columns)}) VALUES ({",".join(["%s"] * len(values))}) ON CONFLICT (hash) DO NOTHING',
+                values,
             )
 
     def update_payments_made(self, subscription_hash: str, new_payments_made: int):
@@ -258,9 +239,12 @@ class Database:
 
     def add_subscription_log(self, log: SubscriptionLog):
         with self.context() as cursor:
+            log_db_dict = log.to_db()
+            columns = list(log_db_dict.keys())
+            values = list(log_db_dict.values())
             cursor.execute(
-                'INSERT INTO subscription_log(log_type, subscription_hash, payment_number, message, timestamp) VALUES (%s, %s, %s, %s, %s)',
-                log.to_db(),
+                f'INSERT INTO subscription_log({",".join(columns)}) VALUES ({",".join(["%s"] * len(values))})',
+                values,
             )
 
     def get_subscription_logs(self, subscription_hash: str) -> list[SubscriptionLog]:
@@ -298,7 +282,7 @@ class Database:
                 return None
             
             return result[0]
-    
+
     def set_merchant_initiator(self, merchant_address: ChecksumAddress, chain: Chain, initiator: ChecksumAddress) -> None:
         with self.context() as cursor:
             cursor.execute('INSERT INTO merchant(address, chain, initiator) VALUES(%s, %s, %s) ON CONFLICT(address, chain) DO UPDATE SET initiator=EXCLUDED.initiator', (merchant_address, str(chain), initiator))

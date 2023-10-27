@@ -81,23 +81,23 @@ class Product(NamedTuple):
             product_name=self.product_name,
         )
     
-    def to_db(self) -> tuple:
-        return (
-            self.product_hash,
-            str(self.chain),
-            self.merchant_address,
-            self.token_address,
-            self.token_symbol,
-            self.token_decimals,
-            self.uint_amount,
-            self.human_amount,
-            self.period,
-            self.free_trial_length,
-            self.payment_period,
-            self.metadata_cid,
-            self.merchant_domain,
-            self.product_name,
-        )
+    def to_db(self) -> dict[str, Any]:
+        return {
+            'hash': self.product_hash,
+            'chain': str(self.chain),
+            'merchant_address': self.merchant_address,
+            'token_address': self.token_address,
+            'token_symbol': self.token_symbol,
+            'token_decimals': self.token_decimals,
+            'uint_amount': self.uint_amount,
+            'human_amount': self.human_amount,
+            'period': self.period,
+            'free_trial_length': self.free_trial_length,
+            'payment_period': self.payment_period,
+            'metadata_cid': self.metadata_cid,
+            'merchant_domain': self.merchant_domain,
+            'product_name': self.product_name,
+        }
     
     @staticmethod
     def from_db(row: tuple) -> 'Product':
@@ -177,18 +177,18 @@ class Subscription(NamedTuple):
             next_payment_at=self.next_payment_at,
         )
 
-    def to_db(self) -> tuple:
-        return (
-            self.subscription_hash,
-            self.product.product_hash,
-            self.user_address,
-            self.start_ts,
-            self.payments_made,
-            self.terminated,
-            self.metadata_cid,
-            self.subscription_id,
-            self.user_id,
-        )
+    def to_db(self) -> dict[str, Any]:
+        return {
+            'hash': self.subscription_hash,
+            'product_hash': self.product.product_hash,
+            'user_address': self.user_address,
+            'start_ts': self.start_ts,
+            'payments_made': self.payments_made,
+            'terminated': self.terminated,
+            'metadata_cid': self.metadata_cid,
+            'subscription_id': self.subscription_id,
+            'user_id': self.user_id,
+        }
 
     @staticmethod
     def from_db(row: tuple) -> 'Subscription':
@@ -224,14 +224,14 @@ class SubscriptionLog(NamedTuple):
     message: str
     timestamp: int
 
-    def to_db(self) -> tuple:
-        return (
-            self.log_type,
-            self.subscription_hash,
-            self.payment_number,
-            self.message,
-            self.timestamp,
-        )
+    def to_db(self) -> dict[str, Any]:
+        return {
+            'log_type': self.log_type,
+            'subscription_hash': self.subscription_hash,
+            'payment_number': self.payment_number,
+            'message': self.message,
+            'timestamp': self.timestamp,
+        }
     
     @staticmethod
     def from_db(row: tuple) -> 'SubscriptionLog':
