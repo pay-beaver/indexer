@@ -1,11 +1,14 @@
+import io
 import logging
 import os
 import traceback
+import base58
 from dotenv import load_dotenv
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+import requests
 from web3 import Web3
 from api_models import SerializedSubscription
 
@@ -16,8 +19,11 @@ from eth_utils.address import to_checksum_address
 
 
 from database import Database
+from utils import sort_subscriptions
 
 load_dotenv()
+
+PINATA_API_KEY = os.environ['PINATA_API_KEY']
 
 db = Database(
     name=os.environ['DB_NAME'],
@@ -93,13 +99,13 @@ async def does_user_have_an_active_subscription(merchant_domain: str, userid: st
 @app.get("/subscriptions/merchant/{merchant_domain}")
 async def get_subscriptions_by_merchant(merchant_domain: str) -> list[SerializedSubscription]:
     subs = db.get_subscriptions_by_merchant(merchant_domain=merchant_domain)
-    return [sub.to_json() for sub in subs]
+    return [sub.to_json() for sub in sort_subscriptions(subs)]
 
 
 @app.get("/subscriptions/merchant/{merchant_domain}/userid/{userid}")
 async def get_subscriptions_by_merchant_and_userid(merchant_domain: str, userid: str) -> list[SerializedSubscription]:
     subs = db.get_subscriptions_by_merchant_and_user(merchant_domain=merchant_domain, userid=userid)
-    return [sub.to_json() for sub in subs]
+    return [sub.to_json() for sub in sort_subscriptions(subs)]
 
 
 @app.get("/subscription/merchant/{merchant_domain}/id/{subscription_id}")
@@ -132,7 +138,13 @@ async def get_subscriptions_by_user(address: str) -> list[SerializedSubscription
         raise HTTPException(status_code=400, detail=f'{address} is not a valid address')
 
     subs = db.get_subscriptions_by_user(validated_address)
-    return [sub.to_json() for sub in subs]
+    return [sub.to_json() for sub in sort_subscriptions(subs)]
+
+
+@app.get('/subscriptions/all')
+async def get_all_subscriptions() -> list[SerializedSubscription]:
+    subs = db.get_all_subscriptions()
+    return [sub.to_json() for sub in sort_subscriptions(subs)]
 
 
 @app.get("/subscription/{subscription_hash}/logs")
@@ -141,21 +153,31 @@ async def get_subscription_logs(subscription_hash: str):
     return [log.to_json() for log in logs]
 
 
-@app.get('/subscriptions/all')
-async def get_all_subscriptions() -> list[SerializedSubscription]:
-    subs = db.get_all_subscriptions()
-    return [sub.to_json() for sub in subs]
-
-
-@app.post('/hash_metadata')
-async def hash_metadata(request: Request) -> str:
-    metadata = await request.body()
-    metadata_hash_hex: str = Web3().solidity_keccak(['bytes'], [metadata]).hex()
-    db.store_hashed_metadata(
-        metadata_hash=metadata_hash_hex,
-        metadata_content=metadata.decode(encoding='utf-8', errors='replace'),
+@app.post('/save_metadata')
+async def save_metadata(request: Request) -> str:
+    metadata_bytes = await request.body()
+    
+    # Check if the metadata is already cached in our database
+    decoded_metadata = metadata_bytes.decode(encoding='utf-8', errors='replace')
+    cached_ipfs_cid = db.get_metadata_ipfs_cid_by_content(decoded_metadata)
+    if cached_ipfs_cid is not None:
+        return cached_ipfs_cid
+    
+    # Otherwise save the data on IPFS
+    metadata_stream = io.BytesIO(metadata_bytes)
+    response = requests.post(
+        url='https://api.pinata.cloud/pinning/pinFileToIPFS',
+        headers={
+            'Authorization': f'Bearer {PINATA_API_KEY}'
+        },
+        files={'file': metadata_stream}
     )
-    return metadata_hash_hex
+    ipfs_cid: str = response.json()['IpfsHash']
+    db.store_metadata(
+        ipfs_cid=ipfs_cid,
+        content=decoded_metadata,
+    )
+    return ipfs_cid
 
 
 @app.get('/healthcheck')

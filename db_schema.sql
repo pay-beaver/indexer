@@ -3,9 +3,9 @@ CREATE TABLE setting(
   value TEXT NOT NULL
 );
 
-CREATE TABLE hashed_metadata(
-  hash TEXT NOT NULL PRIMARY KEY,
-  metadata TEXT NOT NULL
+CREATE TABLE metadata(
+  ipfs_cid TEXT NOT NULL PRIMARY KEY,
+  content TEXT NOT NULL
 );
 
 CREATE TABLE merchant(

@@ -148,7 +148,7 @@ class Subscription(NamedTuple):
     
     @property
     def is_active(self) -> bool:
-        # If subscription was terminated, but the billing cycle has not passed yet,
+        # If subscription was terminated, but the billing period has not passed yet,
         # we consider it active.
         current_timestamp = ts_now()
         next_payment_ts = self.next_payment_at

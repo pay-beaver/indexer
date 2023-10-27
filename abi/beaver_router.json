@@ -117,9 +117,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "productMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "name": "ProductCreated",
@@ -154,9 +154,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "subscriptionMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "name": "SubscriptionStarted",
@@ -318,9 +318,9 @@
         "type": "address"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "productMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       },
       {
         "internalType": "address",
@@ -481,9 +481,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "productMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "stateMutability": "view",
@@ -497,9 +497,9 @@
         "type": "address"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "productMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       },
       {
         "internalType": "address",
@@ -527,9 +527,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "subscriptionMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "name": "setupEnvironmentAndStartSubscription",
@@ -551,9 +551,9 @@
         "type": "bytes32"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "subscriptionMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "name": "startSubscription",
@@ -603,9 +603,9 @@
         "type": "bool"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "bytes",
         "name": "subscriptionMetadata",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "stateMutability": "view",

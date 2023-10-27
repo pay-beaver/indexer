@@ -268,17 +268,26 @@ class Database:
             cursor.execute('SELECT * FROM subscription_log WHERE subscription_hash=%s', (subscription_hash,))
             return [SubscriptionLog.from_db(row) for row in cursor.fetchall()]
 
-    def store_hashed_metadata(self, metadata_hash: str, metadata_content: str):
+    def store_metadata(self, ipfs_cid: str, content: str):
         with self.context() as cursor:
-            cursor.execute('INSERT INTO hashed_metadata(hash, metadata) VALUES(%s, %s) ON CONFLICT (hash) DO NOTHING', (metadata_hash, metadata_content))
+            cursor.execute('INSERT INTO metadata(ipfs_cid, content) VALUES(%s, %s) ON CONFLICT (ipfs_cid) DO NOTHING', (ipfs_cid, content))
 
-    def get_metadata_by_partial_hash(self, partial_hash: str) -> str | None:
+    def get_metadata_by_ipfs_cid(self, ipfs_cid_hex: str) -> str | None:
         with self.context() as cursor:
-            cursor.execute('SELECT metadata FROM hashed_metadata WHERE hash LIKE %s', (f'0x__{partial_hash}',))
+            cursor.execute('SELECT content FROM metadata WHERE ipfs_cid = %s', (ipfs_cid_hex,))
             result = cursor.fetchone()
             if result is None:
                 return None
 
+            return result[0]
+    
+    def get_metadata_ipfs_cid_by_content(self, content: str) -> str | None:
+        with self.context() as cursor:
+            cursor.execute('SELECT ipfs_cid FROM metadata WHERE content = %s', (content,))
+            result = cursor.fetchone()
+            if result is None:
+                return None
+            
             return result[0]
 
     def get_merchant_initiator(self, merchant_address: ChecksumAddress, chain: Chain) -> ChecksumAddress | None:

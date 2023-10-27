@@ -1,9 +1,12 @@
 import json
 import traceback
 from typing import Any
+import base58
 from eth_typing import ChecksumAddress
 from requests import HTTPError
+import requests
 from common_types import Chain, Product, Subscription, SubscriptionLog
+from constants import PINATA_BASE_URL
 from database import Database
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from web3.types import Wei
@@ -12,7 +15,6 @@ import logging
 from web3.exceptions import TimeExhausted
 from price_oracle import get_token_to_eth_price
 from web3.middleware.geth_poa import async_geth_poa_middleware
-
 
 from utils import ts_now
 
@@ -53,18 +55,24 @@ class ChainIndexer:
         logging.info(f"Setup chain indexer. Chain: {self.chain.name}. Initiator: {self.account.address}. Router {self.router.address}")
     
     def get_metadata_by_raw_metadata(self, metadata_raw: bytes, description: str) -> dict[str, Any] | None:
-        # First byte is the version of metadata encoding. Currently
-        # there is only one encoding, so we skip it.
-        metadata_partial_hash = metadata_raw[1:].hex()
-        product_metadata = self.db.get_metadata_by_partial_hash(metadata_partial_hash)
-        if product_metadata is None:
-            logging.error(f"No metadata was found in the database for metadata partial hash {metadata_partial_hash} for {description} for chain {self.chain.name} and router {self.router.address}")
-            return None
+        ipfs_cid = base58.b58encode(metadata_raw).decode(encoding='utf-8', errors='replace')
+        metadata = self.db.get_metadata_by_ipfs_cid(ipfs_cid)
+        if metadata is None:
+            logging.info(f"No metadata was found in the database for metadata_raw {metadata_raw} for {description} for chain {self.chain.name} and router {self.router.address}. Will try to download it from IPFS.")
+        
+            response = requests.get(f'{PINATA_BASE_URL}/{ipfs_cid}')
+            if response.status_code != 200:
+                logging.error(f"No metadata was found on IPFS for metadata_raw {metadata_raw} for {description} for chain {self.chain.name} and router {self.router.address}.")
+                return None
+
+            metadata = response.text
+            self.db.store_metadata(ipfs_cid=ipfs_cid, content=metadata)
+            logging.info(f"Stored metadata in the database for ipfc CID {ipfs_cid} for {description} for chain {self.chain.name} and router {self.router.address}.")
 
         try:
-            metadata_dict: dict = json.loads(product_metadata)
+            metadata_dict: dict = json.loads(metadata)
         except Exception:
-            logging.error(f"Could not load json metadata {product_metadata} for {description} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
+            logging.error(f"Could not load json metadata {metadata} for {description} for chain {self.chain.name} and router {self.router.address}. {traceback.format_exc()}")
             return None
 
         return metadata_dict

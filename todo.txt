@@ -3,9 +3,8 @@ TODO: there is an incosistency right now that `to_db` method belongs to a type i
 TODO: logs should be processed one-by-one fully chronologically. Not the way "find all new subscriptions, then find all new payments, then find all terminations".
 TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log.
 TODO: currently allowance is returrned very weirdly with the default http transport for Sepolia. Sometimes returned allowanace is correct and sometimes it's just zero. If I specify a specific rpc url, then it works just fine. Figure out this incosistency. Also randomly returns nothing when querying product. And after submitting a transaction, it randomly says "block at number XYZ could not be found".
-TODO: when terminating subscription, check that the connected wallet is either user or merchant and not anybody else.
-TODO: setup DB backups.
 TODO: save hashed metadata more permissionlessly. Currently it even makes a problem to migrate metadata from the development database to the production database!
 TODO: sometimes gas limit in my Metamask when starting a subscription on Sepolia (haven't checked on other chains) is too low (~22k). Might be related to the rpc problem.
 TODO: call encoded metadata metadataId, rename hashed_metadata table and store there already final ids, not just hashes. Makes the process easier for all parties and the hash is restorable anyways.
 TODO: on the gateway handle situations when user cancels transaction in their wallet or some error occurs while sending a transaction.
+TODO: manage all development / production variables in a single place. I am too afraid of forgetting to switch something to production when it will be needed.
