@@ -12,7 +12,7 @@ class SerializedProduct(BaseModel):
     period: int
     free_trial_length: int
     payment_period: int
-    metadata_hash: str
+    metadata_cid: str
     merchant_domain: str
     product_name: str
 
@@ -23,7 +23,7 @@ class SerializedSubscription(BaseModel):
     start_ts: int
     payments_made: int
     terminated: bool
-    metadata_hash: str
+    metadata_cid: str
     subscription_id: str | None
     user_id: str | None
     status: str

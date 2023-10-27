@@ -2,28 +2,22 @@ import io
 import logging
 import os
 import traceback
-import base58
 from dotenv import load_dotenv
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import requests
-from web3 import Web3
 from api_models import SerializedSubscription
 
 from chain_indexer import ChainIndexer
 from common_types import Chain
-from constants import ALL_CHAINS_CONFIGS
+from constants import ALL_CHAINS_CONFIGS, PINATA_API_KEY
 from eth_utils.address import to_checksum_address
-
 
 from database import Database
 from utils import sort_subscriptions
 
-load_dotenv()
-
-PINATA_API_KEY = os.environ['PINATA_API_KEY']
 
 db = Database(
     name=os.environ['DB_NAME'],

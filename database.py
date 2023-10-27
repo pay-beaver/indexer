@@ -131,7 +131,7 @@ class Database:
                     period,
                     free_trial_length,
                     payment_period,
-                    metadata_hash,
+                    metadata_cid,
                     merchant_domain,
                     product_name
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',
@@ -157,7 +157,7 @@ class Database:
                     start_ts,
                     payments_made,
                     terminated,
-                    metadata_hash,
+                    metadata_cid,
                     subscription_id,
                     user_id
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (hash) DO NOTHING''',

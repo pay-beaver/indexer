@@ -27,7 +27,7 @@ CREATE TABLE product(
   period BIGINT NOT NULL,
   free_trial_length BIGINT NOT NULL,
   payment_period BIGINT NOT NULL,
-  metadata_hash TEXT NOT NULL,
+  metadata_cid TEXT NOT NULL REFERENCES metadata(ipfs_cid),
   merchant_domain TEXT NOT NULL,
   product_name TEXT NOT NULL
 );
@@ -39,7 +39,7 @@ CREATE TABLE subscription(
   start_ts BIGINT NOT NULL,
   payments_made BIGINT NOT NULL,
   terminated BOOLEAN NOT NULL,
-  metadata_hash TEXT NOT NULL,
+  metadata_cid TEXT NOT NULL REFERENCES metadata(ipfs_cid),
   subscription_id TEXT, -- nullable
   user_id TEXT -- nullable
 );

@@ -2,13 +2,16 @@ from enum import Enum
 from typing import Any, Literal, NamedTuple
 import logging
 import sys
+from dotenv import load_dotenv
 from eth_typing import ChecksumAddress, HexStr
 from web3.types import Wei
 from api_models import SerializedProduct, SerializedSubscription
 
 from utils import ts_now
 
-# Setup logging here, so that it's available in tests
+# Load env variables and setup logging here, so that it's available everywhere
+load_dotenv()
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(pathname)s %(levelname)s %(message)s',
@@ -56,7 +59,7 @@ class Product(NamedTuple):
     period: int
     free_trial_length: int
     payment_period: int
-    metadata_hash: str
+    metadata_cid: str
     merchant_domain: str
     product_name: str
 
@@ -73,7 +76,7 @@ class Product(NamedTuple):
             period=self.period,
             free_trial_length=self.free_trial_length,
             payment_period=self.payment_period,
-            metadata_hash=self.metadata_hash,
+            metadata_cid=self.metadata_cid,
             merchant_domain=self.merchant_domain,
             product_name=self.product_name,
         )
@@ -91,7 +94,7 @@ class Product(NamedTuple):
             self.period,
             self.free_trial_length,
             self.payment_period,
-            self.metadata_hash,
+            self.metadata_cid,
             self.merchant_domain,
             self.product_name,
         )
@@ -110,7 +113,7 @@ class Product(NamedTuple):
             period=row[8],
             free_trial_length=row[9],
             payment_period=row[10],
-            metadata_hash=row[11],
+            metadata_cid=row[11],
             merchant_domain=row[12],
             product_name=row[13],
         )
@@ -123,7 +126,7 @@ class Subscription(NamedTuple):
     start_ts: int
     payments_made: int
     terminated: bool
-    metadata_hash: str
+    metadata_cid: str
     subscription_id: str | None
     user_id: str | None
         
@@ -166,7 +169,7 @@ class Subscription(NamedTuple):
             start_ts=self.start_ts,
             payments_made=self.payments_made,
             terminated=self.terminated,
-            metadata_hash=self.metadata_hash,
+            metadata_cid=self.metadata_cid,
             subscription_id=self.subscription_id,
             user_id=self.user_id,
             status=self.status,
@@ -182,7 +185,7 @@ class Subscription(NamedTuple):
             self.start_ts,
             self.payments_made,
             self.terminated,
-            self.metadata_hash,
+            self.metadata_cid,
             self.subscription_id,
             self.user_id,
         )
@@ -196,7 +199,7 @@ class Subscription(NamedTuple):
             start_ts=row[3],
             payments_made=row[4],
             terminated=row[5],
-            metadata_hash=row[6],
+            metadata_cid=row[6],
             subscription_id=row[7],
             user_id=row[8],
         )

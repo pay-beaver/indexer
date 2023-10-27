@@ -54,15 +54,14 @@ class ChainIndexer:
         self.priority_fee_wei = priority_fee_wei
         logging.info(f"Setup chain indexer. Chain: {self.chain.name}. Initiator: {self.account.address}. Router {self.router.address}")
     
-    def get_metadata_by_raw_metadata(self, metadata_raw: bytes, description: str) -> dict[str, Any] | None:
-        ipfs_cid = base58.b58encode(metadata_raw).decode(encoding='utf-8', errors='replace')
+    def get_metadata_by_ipfs_cid(self, ipfs_cid: str, description: str) -> dict[str, Any] | None:
         metadata = self.db.get_metadata_by_ipfs_cid(ipfs_cid)
         if metadata is None:
-            logging.info(f"No metadata was found in the database for metadata_raw {metadata_raw} for {description} for chain {self.chain.name} and router {self.router.address}. Will try to download it from IPFS.")
+            logging.info(f"No metadata was found in the database for ipfs_cod {ipfs_cid} for {description} for chain {self.chain.name} and router {self.router.address}. Will try to download it from IPFS.")
         
             response = requests.get(f'{PINATA_BASE_URL}/{ipfs_cid}')
             if response.status_code != 200:
-                logging.error(f"No metadata was found on IPFS for metadata_raw {metadata_raw} for {description} for chain {self.chain.name} and router {self.router.address}.")
+                logging.error(f"No metadata was found on IPFS for ipfs_cid {ipfs_cid} for {description} for chain {self.chain.name} and router {self.router.address}.")
                 return None
 
             metadata = response.text
@@ -123,8 +122,9 @@ class ChainIndexer:
                         token_decimals = await token_contract.functions.decimals().call()
                         token_symbol = await token_contract.functions.symbol().call()
 
-                        product_metadata_dict = self.get_metadata_by_raw_metadata(
-                            metadata_raw=product_metadata_raw,
+                        product_metadata_ipfs_cid = base58.b58encode(product_metadata_raw).decode(encoding='utf-8', errors='replace')
+                        product_metadata_dict = self.get_metadata_by_ipfs_cid(
+                            ipfs_cid=product_metadata_ipfs_cid,
                             description=str(product_raw),
                         )
                         if product_metadata_dict is None:
@@ -149,7 +149,7 @@ class ChainIndexer:
                             period=period,
                             free_trial_length=free_trial_length,
                             payment_period=payment_period,
-                            metadata_hash=product_metadata_raw.hex(),
+                            metadata_cid=product_metadata_ipfs_cid,
                             merchant_domain=merchant_domain,
                             product_name=product_name,
                         )
@@ -157,11 +157,12 @@ class ChainIndexer:
                         self.db.add_product(product)
                         logging.info(f"Added product {product} for chain {self.chain.name} and router {self.router.address}")
 
-                    subscription_metadata_dict = self.get_metadata_by_raw_metadata(
-                        metadata_raw=subscription_metadata_raw,
+                    subscription_metadata_ipfs_cid = base58.b58encode(subscription_metadata_raw).decode(encoding='utf-8', errors='replace')
+                    subscription_metadata_dict = self.get_metadata_by_ipfs_cid(
+                        ipfs_cid=subscription_metadata_ipfs_cid,
                         description=f'Subscription {str(subscription_hash)}',
                     ) or {}  # subscription metadata is optional
-   
+
                     subscription = Subscription(
                         subscription_hash=subscription_hash,
                         product=product,
@@ -169,7 +170,7 @@ class ChainIndexer:
                         start_ts=start_ts,
                         payments_made=0,
                         terminated=False,
-                        metadata_hash=subscription_metadata_raw.hex(),
+                        metadata_cid=subscription_metadata_ipfs_cid,
                         subscription_id=subscription_metadata_dict.get('subscriptionId'),
                         user_id=subscription_metadata_dict.get('userId'),
                     )
