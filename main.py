@@ -177,7 +177,7 @@ async def save_metadata(request: Request) -> str:
     return ipfs_cid
 
 
-@app.post('/shorcut')
+@app.post('/shortcut')
 async def make_shortcut(request: Request) -> str:
     shortcut_content = await request.json()
     shortcut_id = base58.b58encode(random.randbytes(4)).decode()

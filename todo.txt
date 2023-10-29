@@ -4,3 +4,5 @@ TODO: logs should be processed one-by-one fully chronologically. Not the way "fi
 TODO: on the gateway handle situations when user cancels transaction in their wallet or some error occurs while sending a transaction.
 TODO: add domain verification.
 TODO: add shortcuts.
+TODO: show links to transactions on the Subscribe component.
+TODO: in wagmi, compile a set of hooks and properties that become available when a user connects their wallet and validate initialization of all these properties at the same location.

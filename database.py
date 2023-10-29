@@ -307,5 +307,5 @@ class Database:
         with self.context() as cursor:
             cursor.execute(
                 'INSERT INTO shortcut(id, content) VALUES(%s, %s)',
-                (shortcut_id, shortcut_content),
+                (shortcut_id, json.dumps(shortcut_content)),
             )

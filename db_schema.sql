@@ -10,7 +10,7 @@ CREATE TABLE metadata(
 
 CREATE TABLE shortcut(
   id TEXT NOT NULL PRIMARY KEY,
-  content TEXT NOT NULL,
+  content TEXT NOT NULL
 );
 
 CREATE TABLE merchant(
