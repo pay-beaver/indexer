@@ -1,7 +1,10 @@
 import io
 import logging
 import os
+import random
 import traceback
+from typing import Any
+import base58
 from dotenv import load_dotenv
 import asyncio
 
@@ -172,6 +175,28 @@ async def save_metadata(request: Request) -> str:
         content=decoded_metadata,
     )
     return ipfs_cid
+
+
+@app.post('/shorcut')
+async def make_shortcut(request: Request) -> str:
+    shortcut_content = await request.json()
+    shortcut_id = base58.b58encode(random.randbytes(4)).decode()
+
+    # Collision is not likely to happen, but still let's protect against it.
+    while db.get_shortcut(shortcut_id=shortcut_id) is not None:
+        shortcut_id = base58.b58encode(random.randbytes(4)).decode()
+    
+    db.save_shortcut(shortcut_id=shortcut_id, shortcut_content=shortcut_content)
+    return shortcut_id
+
+
+@app.get('/shortcut/{shortcut_id}')
+async def get_shortcut(shortcut_id: str) -> dict[str, Any]:
+    shortcut_content = db.get_shortcut(shortcut_id=shortcut_id)
+    if shortcut_content is None:
+        raise HTTPException(status_code=404, detail=f'No shortcut with id {shortcut_id}')
+
+    return shortcut_content
 
 
 @app.get('/healthcheck')

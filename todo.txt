@@ -1,6 +1,6 @@
-TODO: in chain indexer raise errors instead of doing logging.error.
-TODO: there is an incosistency right now that `to_db` method belongs to a type in common_types.py, while the query is generated in database.py. This should be happenning in a single location.
-TODO: logs should be processed one-by-one fully chronologically. Not the way "find all new subscriptions, then find all new payments, then find all terminations".
-TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log.
+TODO: in chain indexer raise errors instead of doing logging.error. Not a high priority.
+TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log. Not a high priority.
+TODO: logs should be processed one-by-one fully chronologically. Not the way "find all new subscriptions, then find all new payments, then find all terminations". A priority, but not mandatory.
 TODO: on the gateway handle situations when user cancels transaction in their wallet or some error occurs while sending a transaction.
-TODO: manage all development / production variables in a single place. I am too afraid of forgetting to switch something to production when it will be needed.
+TODO: add domain verification.
+TODO: add shortcuts.

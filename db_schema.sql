@@ -8,6 +8,11 @@ CREATE TABLE metadata(
   content TEXT NOT NULL
 );
 
+CREATE TABLE shortcut(
+  id TEXT NOT NULL PRIMARY KEY,
+  content TEXT NOT NULL,
+);
+
 CREATE TABLE merchant(
   address TEXT NOT NULL,
   chain TEXT NOT NULL,

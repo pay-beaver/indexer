@@ -1,3 +1,5 @@
+import json
+from typing import Any
 from eth_typing import ChecksumAddress
 import psycopg2
 from contextlib import contextmanager
@@ -286,3 +288,24 @@ class Database:
     def set_merchant_initiator(self, merchant_address: ChecksumAddress, chain: Chain, initiator: ChecksumAddress) -> None:
         with self.context() as cursor:
             cursor.execute('INSERT INTO merchant(address, chain, initiator) VALUES(%s, %s, %s) ON CONFLICT(address, chain) DO UPDATE SET initiator=EXCLUDED.initiator', (merchant_address, str(chain), initiator))
+
+    def get_shortcut(self, shortcut_id: str) -> dict[str, Any] | None:
+        with self.context() as cursor:
+            cursor.execute('SELECT content FROM shortcut WHERE id = %s', (shortcut_id,))
+            result = cursor.fetchone()
+            if result is None:
+                return None
+            
+            try:
+                shortcut_content = json.loads(result[0])
+            except Exception:
+                return None
+            
+            return shortcut_content
+
+    def save_shortcut(self, shortcut_id: str, shortcut_content: dict[str, Any]) -> None:
+        with self.context() as cursor:
+            cursor.execute(
+                'INSERT INTO shortcut(id, content) VALUES(%s, %s)',
+                (shortcut_id, shortcut_content),
+            )
