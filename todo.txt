@@ -1,8 +1,14 @@
 TODO: in chain indexer raise errors instead of doing logging.error. Not a high priority.
 TODO: improve logging so that I don't have to write "for router ... and chain ..." in every single log. Not a high priority.
 TODO: logs should be processed one-by-one fully chronologically. Not the way "find all new subscriptions, then find all new payments, then find all terminations". A priority, but not mandatory.
-TODO: on the gateway handle situations when user cancels transaction in their wallet or some error occurs while sending a transaction.
 TODO: add domain verification.
-TODO: add shortcuts.
-TODO: show links to transactions on the Subscribe component.
 TODO: in wagmi, compile a set of hooks and properties that become available when a user connects their wallet and validate initialization of all these properties at the same location.
+TODO: display if a user has already subscribed to a product.
+TODO: soft terminations. One approach is that merchants / initiators terminate subscriptions in batches, and thus save on gas. The other approach is that we simply wait until the subscription expires (if PaymentPeriod is not too big).
+TODO: probably need flexibility on how to consider subscriptions inactive. Can be parametrized in metadata. Currently I see 2 approaches: is_active becomes false when it's time for a payment, but if the payment succeeds, the subscription is resumed. Approach 2: subscription remains in status active until the end of the paymentPeriod (which is how it currently works).
+TODO: option to put gas fee on the users.
+TODO: idea. Frontend fee. There are currently 3 parties: router, initiator and the frontend. Router has the router fee embeded. Initiators get compensated by setting compensation higher than what they pay for gas. But the frontend doesn't get compensated at all right now. Maybe it's fine, but creating incentives for all 3 parties sounds quite great to me. Alternative idea: attempt a payment. If it fails, disable subscription immediately. And then wait for the user's action (e.g. top up or increase allowance).
+TODO: soft terminations. One approach is that merchants / initiators terminate subscriptions in batches, and thus save on gas. The other approach is that we simply wait until the subscription expires (if PaymentPeriod is not too big).
+TODO: probably need flexibility on how to consider subscriptions inactive. Can be parametrized in metadata. Currently I see 2 approaches: is_active becomes false when it's time for a payment, but if the payment succeeds, the subscription is resumed. Approach 2: subscription remains in status active until the end of the paymentPeriod (which is how it currently works).
+TODO: option to put gas fee on the users.
+TODO: maybe reconsider how initiators get compensated? It would be good to check gas differences between current approach (accumulating compensation in the router) and the approach of pushing the compensation to an initiator's address immediately. Pushing immediately makes life much easier and simpler for everybody. And especially for initiators, as they will be able to sell the received tokens immediately. Would really like to see the gas difference here. But hm... again... maybe it is not a question worth asking at this early stage and I should do just something (e.g. take the simplest approach and push compensation to initiators immediately)?
