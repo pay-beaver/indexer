@@ -10,7 +10,6 @@ SEPOLIA_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
   min_block=4642995,
   rpc='https://eth-sepolia-public.unifra.io',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=False,
 )
 
@@ -19,7 +18,6 @@ MUMBAI_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
   min_block=42085814,
   rpc='https://rpc.ankr.com/polygon_mumbai',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=True,
 )
 
@@ -28,7 +26,6 @@ BASE_GOERLI_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
   min_block=12051590,
   rpc='https://goerli.base.org',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=True,
 )
 
@@ -37,7 +34,6 @@ POLYGON_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
   min_block=49624479,
   rpc='https://polygon.llamarpc.com',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=False,
 )
 
@@ -46,7 +42,6 @@ BASE_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x27bFF737b405a4C540001BDF9CC184c3392b1733'),
   min_block=6255026,
   rpc='https://mainnet.base.org',
-  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=False,
 )
 

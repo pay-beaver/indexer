@@ -40,7 +40,6 @@ class ChainIndexer:
             db: Database,
             min_block: int,
             initiator_private_key: str,
-            priority_fee_wei: Wei,
             needs_poa_middleware: bool
     ) -> None:
         self.chain = chain
@@ -51,7 +50,6 @@ class ChainIndexer:
         self.min_block = min_block
         self.router = self.web3.eth.contract(address=router_address, abi=BEAVER_ROUTER_ABI)
         self.account: LocalAccount = self.web3.eth.account.from_key(initiator_private_key)
-        self.priority_fee_wei = priority_fee_wei
         logging.info(f"Setup chain indexer. Chain: {self.chain.name}. Initiator: {self.account.address}. Router {self.router.address}")
     
     def get_metadata_by_minimized_ipfs_cid(self, minimized_ipfs_cid: bytes, description: str) -> tuple[str, dict[str, Any] | None]:

@@ -65,7 +65,6 @@ for config in ALL_CHAINS_CONFIGS:
         db=db,
         min_block=config.min_block,
         initiator_private_key=os.environ['INITIATOR_PRIVATE_KEY'],
-        priority_fee_wei=config.priority_fee_wei,
         needs_poa_middleware=config.needs_poa_middleware,
     )
 

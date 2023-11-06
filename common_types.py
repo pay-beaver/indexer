@@ -220,7 +220,6 @@ class ChainConfig(NamedTuple):
     router_address: ChecksumAddress
     rpc: str
     min_block: int
-    priority_fee_wei: Wei
     needs_poa_middleware: bool
 
 
