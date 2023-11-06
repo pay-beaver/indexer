@@ -320,7 +320,7 @@ class ChainIndexer:
                     log_type='payment-issue',
                     subscription_hash=subscription.subscription_hash,
                     payment_number=payment_number,
-                    message=f'Could not pay the subscription due to: allowance is only {user_balance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.',
+                    message=f'Could not pay the subscription due to: allowance is only {allowance_uint / 10 ** subscription.product.token_decimals} tokens while {subscription.product.human_amount} is required to make a payment.',
                     timestamp=ts_now(),
                 ))
                 continue
