@@ -281,6 +281,10 @@ class ChainIndexer:
         max_fee_wei = Wei(base_fee_to_use + priority_fee_to_use)
         eth_fee = gas * max_fee_wei / 1e18
         compensation_in_token = eth_fee * token_to_eth_price
+
+        if (self.chain == Chain.BASE):
+            # Uncalculatable L1 fee. TODO: It change over time, so need to handle programmatically.
+            compensation_in_token += 0.12
         
         return max_fee_wei, priority_fee_to_use, compensation_in_token
 
