@@ -103,12 +103,12 @@ class ChainIndexer:
                     if product is None:
                         product_raw = await self.router.functions.products(product_hash_bytes).call()
                         (
-                            merchant_address,
-                            token_address,
                             uint_amount,
+                            token_address,
                             period,
                             free_trial_length,
                             payment_period,
+                            merchant_address,
                             product_metadata_raw,
                         ) = product_raw
 
@@ -293,7 +293,7 @@ class ChainIndexer:
             return  # The initiator is stuck. Needs to be resolved manually ASAP!!!
 
         payable_subscriptions = self.db.get_payable_subscriptions(self.chain, ts_now(), self.account.address)
-        logging.info(f'Got {len(payable_subscriptions)} subscriptions to attempt payments for  on chain {self.chain.name} and router {self.router.address}')
+        logging.info(f'Got {len(payable_subscriptions)} subscriptions to attempt payments for on chain {self.chain.name} and router {self.router.address}')
         for subscription in payable_subscriptions:
             payment_number = subscription.payments_made + 1
             logging.info(f'Attempting payment {payment_number} for subscription {subscription} on chain {self.chain.name} and router {self.router.address}')

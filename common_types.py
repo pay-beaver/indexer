@@ -27,6 +27,9 @@ logging.info('Starting beaver indexer')
 class Chain(Enum):
     SEPOLIA = 11155111
     MUMBAI = 80001
+    BASE_GOERLI = 84531
+    POLYGON = 137
+    BASE = 8453
 
     def __str__(self) -> str:
         if self == Chain.SEPOLIA:
@@ -35,15 +38,22 @@ class Chain(Enum):
         if self == Chain.MUMBAI:
             return 'polygon-mumbai'
         
+        if self == Chain.BASE_GOERLI:
+            return 'base-goerli'
+        
+        if self == Chain.POLYGON:
+            return 'polygon'
+
+        if self == Chain.BASE:
+            return 'base'
+
         raise AssertionError(f'Unknown chain {self}')
     
     @staticmethod
     def load(serialized_chain: str) -> 'Chain':
-        if serialized_chain == str(Chain.SEPOLIA):
-            return Chain.SEPOLIA
-        
-        if serialized_chain == str(Chain.MUMBAI):
-            return Chain.MUMBAI
+        for chain in Chain:
+            if serialized_chain == str(chain):
+                return chain
 
         raise AssertionError(f'Unknown chain {serialized_chain}')
 

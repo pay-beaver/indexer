@@ -7,8 +7,8 @@ from web3.types import Wei
 
 SEPOLIA_CONFIG = ChainConfig(
   chain=Chain.SEPOLIA,
-  router_address=cast(ChecksumAddress, '0x46a432Ee69881Af9067C23AE7680912245A7fF52'),
-  min_block=4588724,
+  router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
+  min_block=4642995,
   rpc='https://eth-sepolia-public.unifra.io',
   priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=False,
@@ -16,16 +16,47 @@ SEPOLIA_CONFIG = ChainConfig(
 
 MUMBAI_CONFIG = ChainConfig(
   chain=Chain.MUMBAI,
-  router_address=cast(ChecksumAddress, '0xbE247668C131b913baDa67E76f9cb219EBa8764c'),
-  min_block=41793971,
+  router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
+  min_block=42085814,
   rpc='https://rpc.ankr.com/polygon_mumbai',
   priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
   needs_poa_middleware=True,
 )
 
+BASE_GOERLI_CONFIG = ChainConfig(
+  chain=Chain.BASE_GOERLI,
+  router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
+  min_block=12051590,
+  rpc='https://goerli.base.org',
+  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
+  needs_poa_middleware=True,
+)
+
+POLYGON_CONFIG = ChainConfig(
+  chain=Chain.POLYGON,
+  router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
+  min_block=49624479,
+  rpc='https://polygon.llamarpc.com',
+  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
+  needs_poa_middleware=False,
+)
+
+BASE_CONFIG = ChainConfig(
+  chain=Chain.BASE,
+  router_address=cast(ChecksumAddress, '0x27bFF737b405a4C540001BDF9CC184c3392b1733'),
+  min_block=6255026,
+  rpc='https://mainnet.base.org',
+  priority_fee_wei=Wei(int(1.5 * 10**9)),  # 1.5 gwei
+  needs_poa_middleware=False,
+)
+
+
 ALL_CHAINS_CONFIGS = [
   SEPOLIA_CONFIG,
   MUMBAI_CONFIG,
+  BASE_GOERLI_CONFIG,
+  POLYGON_CONFIG,
+  BASE_CONFIG
 ]
 
 GAS_PER_PAYMENT = 92000
