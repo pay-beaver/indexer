@@ -34,7 +34,7 @@ POLYGON_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x748FC43a4218f28CB6CD99F60c30Fcc09eA4E5f9'),
   min_block=49624479,
   rpc='https://polygon.llamarpc.com',
-  needs_poa_middleware=False,
+  needs_poa_middleware=True,
 )
 
 BASE_CONFIG = ChainConfig(
@@ -42,7 +42,7 @@ BASE_CONFIG = ChainConfig(
   router_address=cast(ChecksumAddress, '0x27bFF737b405a4C540001BDF9CC184c3392b1733'),
   min_block=6255026,
   rpc='https://mainnet.base.org',
-  needs_poa_middleware=False,
+  needs_poa_middleware=True,
 )
 
 
