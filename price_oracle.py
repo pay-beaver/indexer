@@ -14,7 +14,7 @@ TOKEN_TO_BINANCE_SYMBOL = {
     # TODO: there is no direct pair for COMP-ETH. Need to handle such cases.
   },
   Chain.POLYGON: {
-    '0xc2132D05D31c914a87C6611C10748AEb04B58e8F': 'ETHUSDT',
+    '0xc2132D05D31c914a87C6611C10748AEb04B58e8F': 'MATICUSDT',
   },
   Chain.BASE: {
     '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913': 'ETHUSDC',

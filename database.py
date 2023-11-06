@@ -217,7 +217,7 @@ class Database:
             cursor.execute(
                 '''SELECT * FROM subscription INNER JOIN product ON subscription.product_hash = product.hash INNER JOIN merchant ON product.merchant_address = merchant.address AND product.chain = merchant.chain WHERE
                 product.chain = %s AND terminated = FALSE AND
-                %s > start_ts + period * payments_made AND
+                %s >= start_ts + period * payments_made AND
                 %s < start_ts + period * payments_made + payment_period AND
                 initiator = %s AND
                 %s >= (SELECT GREATEST(MAX(timestamp), 0) FROM subscription_log WHERE
